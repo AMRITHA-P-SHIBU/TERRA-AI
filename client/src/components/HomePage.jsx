@@ -27,6 +27,41 @@ import {
   Award
 } from 'lucide-react';
 
+// Social Brand SVG Icons for Contact & Footer
+function TwitterIcon({ className = "w-5 h-5" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" />
+    </svg>
+  );
+}
+
+function InstagramIcon({ className = "w-5 h-5" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </svg>
+  );
+}
+
+function FacebookIcon({ className = "w-5 h-5" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+    </svg>
+  );
+}
+
+function XSocialIcon({ className = "w-5 h-5" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
+
 export default function HomePage({ onExplore, onNavigate }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null); // 'donate' | 'join' | 'approach' | 'card-detail'
@@ -192,14 +227,6 @@ export default function HomePage({ onExplore, onNavigate }) {
       color: 'from-yellow-500 to-amber-600',
       tag: 'Gamification',
     },
-    {
-      id: 'habits',
-      title: 'Daily Climate Quests',
-      desc: 'Engage with daily micro-habits, build sustainable streaks, and turn everyday choices into measurable conservation.',
-      icon: Sparkles,
-      color: 'from-violet-500 to-purple-600',
-      tag: 'Actionable Habits',
-    },
   ];
 
   const handleCardClick = (card) => {
@@ -287,16 +314,8 @@ export default function HomePage({ onExplore, onNavigate }) {
               </button>
             </nav>
 
-            {/* Actions: Donate, Join Us & EXPLORE BUTTON */}
+            {/* Actions: Join Us & EXPLORE BUTTON */}
             <div className="hidden sm:flex items-center gap-3">
-              {/* Donate Button (Soft Green Pill) */}
-              <button
-                onClick={() => setActiveModal('donate')}
-                className="px-5 py-2 rounded-full text-sm font-bold bg-[#e2f9d9] text-[#194d28] hover:bg-[#d6f4ca] hover:scale-102 active:scale-98 transition-all cursor-pointer shadow-xs"
-              >
-                Donate
-              </button>
-
               {/* Join Us Button (Soft Blue Pill) */}
               <button
                 onClick={() => setActiveModal('join')}
@@ -311,7 +330,7 @@ export default function HomePage({ onExplore, onNavigate }) {
                 className="flex items-center gap-2 px-5 py-2 rounded-full text-sm font-extrabold bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-700/20 hover:shadow-lg hover:shadow-emerald-700/30 hover:scale-105 active:scale-98 transition-all cursor-pointer group"
                 title="Enter the Terra AI Main Platform"
               >
-                <span>Explore</span>
+                <span>Explore Now</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
@@ -322,7 +341,7 @@ export default function HomePage({ onExplore, onNavigate }) {
                 onClick={onExplore}
                 className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-700 text-white flex items-center gap-1 cursor-pointer"
               >
-                <span>Explore</span>
+                <span>Explore Now</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
               <button
@@ -371,12 +390,6 @@ export default function HomePage({ onExplore, onNavigate }) {
 
             <div className="flex gap-2 pt-2 border-t border-slate-100">
               <button
-                onClick={() => { setMobileMenuOpen(false); setActiveModal('donate'); }}
-                className="flex-1 py-2 text-center rounded-full text-xs font-bold bg-[#e2f9d9] text-[#194d28]"
-              >
-                Donate
-              </button>
-              <button
                 onClick={() => { setMobileMenuOpen(false); setActiveModal('join'); }}
                 className="flex-1 py-2 text-center rounded-full text-xs font-bold bg-[#d8f0fa] text-[#16425b]"
               >
@@ -386,7 +399,7 @@ export default function HomePage({ onExplore, onNavigate }) {
                 onClick={() => { setMobileMenuOpen(false); onExplore(); }}
                 className="flex-1 py-2 text-center rounded-full text-xs font-bold bg-emerald-700 text-white flex items-center justify-center gap-1"
               >
-                <span>Explore</span>
+                <span>Explore Now</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -447,7 +460,7 @@ export default function HomePage({ onExplore, onNavigate }) {
                   className="px-8 py-4 rounded-full text-base font-extrabold bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-700 text-white shadow-lg shadow-emerald-800/25 hover:shadow-xl hover:shadow-emerald-800/35 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-3 cursor-pointer group"
                 >
                   <Compass className="w-5 h-5 text-emerald-200 group-hover:rotate-45 transition-transform duration-300" />
-                  <span>Explore Platform</span>
+                  <span>Explore Now</span>
                   <ArrowRight className="w-5 h-5 text-emerald-200 group-hover:translate-x-1.5 transition-transform duration-300" />
                 </button>
 
@@ -748,15 +761,6 @@ export default function HomePage({ onExplore, onNavigate }) {
               <div className="text-xs text-emerald-300/70">Across 64 countries worldwide</div>
             </div>
           </div>
-
-          <div className="mt-14 text-center">
-            <button
-              onClick={onExplore}
-              className="px-8 py-4 rounded-full text-base font-extrabold bg-[#cad98d] text-[#1c381c] hover:bg-[#bfcf82] transition-colors shadow-lg cursor-pointer"
-            >
-              Add Your Small Action Today →
-            </button>
-          </div>
         </div>
       </section>
 
@@ -817,6 +821,55 @@ export default function HomePage({ onExplore, onNavigate }) {
                 </button>
               </div>
             </form>
+
+            {/* Social Logos at Bottom of Contact Card */}
+            <div className="mt-10 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                Connect With Terra AI
+              </span>
+              <div className="flex items-center gap-3">
+                <a
+                  href="https://twitter.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 hover:bg-[#1DA1F2] hover:text-white flex items-center justify-center transition-all hover:scale-110 shadow-2xs cursor-pointer"
+                  title="Twitter"
+                  aria-label="Twitter"
+                >
+                  <TwitterIcon className="w-4 h-4 fill-current" />
+                </a>
+                <a
+                  href="https://instagram.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 hover:bg-gradient-to-tr hover:from-amber-500 hover:via-pink-500 hover:to-purple-600 hover:text-white flex items-center justify-center transition-all hover:scale-110 shadow-2xs cursor-pointer"
+                  title="Instagram"
+                  aria-label="Instagram"
+                >
+                  <InstagramIcon className="w-4 h-4" />
+                </a>
+                <a
+                  href="https://facebook.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 hover:bg-[#1877F2] hover:text-white flex items-center justify-center transition-all hover:scale-110 shadow-2xs cursor-pointer"
+                  title="Facebook"
+                  aria-label="Facebook"
+                >
+                  <FacebookIcon className="w-4 h-4 fill-current" />
+                </a>
+                <a
+                  href="https://x.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 hover:bg-black hover:text-white flex items-center justify-center transition-all hover:scale-110 shadow-2xs cursor-pointer"
+                  title="X"
+                  aria-label="X"
+                >
+                  <XSocialIcon className="w-3.5 h-3.5 fill-current" />
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -845,13 +898,55 @@ export default function HomePage({ onExplore, onNavigate }) {
               <button onClick={() => scrollToSection('features')} className="hover:text-emerald-800 cursor-pointer">Features</button>
               <button onClick={() => scrollToSection('our-work')} className="hover:text-emerald-800 cursor-pointer">Our Work</button>
               <button onClick={() => scrollToSection('contact')} className="hover:text-emerald-800 cursor-pointer">Contact</button>
-              <button onClick={onExplore} className="text-emerald-700 font-bold hover:underline cursor-pointer">Explore Main Page →</button>
+            </div>
+
+            {/* Social Logos in Footer */}
+            <div className="flex items-center gap-2.5">
+              <a
+                href="https://twitter.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-[#1DA1F2] hover:text-white flex items-center justify-center transition-all hover:scale-110 cursor-pointer"
+                title="Twitter"
+                aria-label="Twitter"
+              >
+                <TwitterIcon className="w-3.5 h-3.5 fill-current" />
+              </a>
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-gradient-to-tr hover:from-amber-500 hover:via-pink-500 hover:to-purple-600 hover:text-white flex items-center justify-center transition-all hover:scale-110 cursor-pointer"
+                title="Instagram"
+                aria-label="Instagram"
+              >
+                <InstagramIcon className="w-3.5 h-3.5" />
+              </a>
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-[#1877F2] hover:text-white flex items-center justify-center transition-all hover:scale-110 cursor-pointer"
+                title="Facebook"
+                aria-label="Facebook"
+              >
+                <FacebookIcon className="w-3.5 h-3.5 fill-current" />
+              </a>
+              <a
+                href="https://x.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-black hover:text-white flex items-center justify-center transition-all hover:scale-110 cursor-pointer"
+                title="X"
+                aria-label="X"
+              >
+                <XSocialIcon className="w-3 h-3 fill-current" />
+              </a>
             </div>
           </div>
 
-          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+          <div className="pt-8 text-center text-xs text-slate-400">
             <p>© {new Date().getFullYear()} Terra AI Ecology. All rights reserved. Small actions, big impact.</p>
-            <p>Powered by React, TailwindCSS, Express & Gemini AI</p>
           </div>
         </div>
       </footer>

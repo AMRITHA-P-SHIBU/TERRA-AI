@@ -151,9 +151,7 @@ export default function App() {
             <button onClick={() => setActiveTab('ai')} className="hover:text-emerald-700 cursor-pointer">AI Assistant</button>
             <button onClick={() => setActiveTab('admin')} className="text-teal-700 hover:underline cursor-pointer">Admin Portal</button>
           </div>
-          <p className="text-slate-400">
-            Powered by React, Express, Supabase & Gemini AI
-          </p>
+
         </div>
       </footer>
     </div>
