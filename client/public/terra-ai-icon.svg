@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="g1" x1="30%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" stop-color="#2E8B3E" />
+      <stop offset="100%" stop-color="#0D5A1D" />
+    </linearGradient>
+    <linearGradient id="lf" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0D5A1D" />
+      <stop offset="100%" stop-color="#2E9B40" />
+    </linearGradient>
+    <clipPath id="gc">
+      <circle cx="60" cy="52" r="42" />
+    </clipPath>
+  </defs>
+  <rect width="120" height="120" rx="24" fill="#FFFFFF" />
+
+  <!-- Globe -->
+  <circle cx="60" cy="52" r="42" fill="url(#g1)" opacity="0.92" />
+  <g clip-path="url(#gc)">
+    <!-- Europe -->
+    <path d="M 50 25 C 55 22 62 20 68 24 C 72 27 76 24 80 28 C 82 32 78 36 74 38 C 70 40 68 44 64 46 C 60 48 54 46 50 42 C 47 38 46 32 50 25 Z" fill="#FFFFFF" opacity="0.9" />
+    <!-- Africa -->
+    <path d="M 64 46 C 68 44 74 46 78 50 C 82 56 84 64 82 72 C 80 80 76 86 72 90 C 68 94 64 92 62 88 C 60 82 56 76 56 70 C 56 62 60 54 64 46 Z" fill="#FFFFFF" opacity="0.9" />
+    <!-- Americas -->
+    <path d="M 30 28 C 36 24 42 26 44 32 C 46 38 42 44 40 50 C 38 56 34 62 32 68 C 30 74 32 78 30 82 C 28 78 26 70 28 62 C 30 54 28 46 28 38 C 28 32 28 30 30 28 Z" fill="#FFFFFF" opacity="0.85" />
+    <!-- Lat lines -->
+    <ellipse cx="60" cy="40" rx="38" ry="8" fill="none" stroke="#FFF" stroke-opacity="0.15" stroke-width="0.6" />
+    <ellipse cx="60" cy="52" rx="42" ry="9" fill="none" stroke="#FFF" stroke-opacity="0.12" stroke-width="0.6" />
+    <ellipse cx="60" cy="64" rx="38" ry="8" fill="none" stroke="#FFF" stroke-opacity="0.15" stroke-width="0.6" />
+  </g>
+  <circle cx="60" cy="52" r="42" fill="none" stroke="#1A7A2E" stroke-width="2" opacity="0.7" />
+
+  <!-- Swoosh -->
+  <path d="M 10 96 C 30 80 50 72 60 70 C 75 68 90 76 100 88 C 105 94 108 96 110 96" fill="none" stroke="#1A7A2E" stroke-width="3" stroke-linecap="round" opacity="0.7" />
+
+  <!-- Leaf -->
+  <g transform="translate(22, 28)">
+    <path d="M 4 18 C 0 12 -2 4 6 -4 C 14 -10 24 -8 28 -2 C 32 4 26 12 18 16 C 12 18 6 20 4 18 Z" fill="url(#lf)" />
+    <path d="M 6 16 C 10 10 18 2 26 -4" fill="none" stroke="#FFF" stroke-width="1" stroke-linecap="round" stroke-opacity="0.5" />
+    <path d="M 4 20 C 6 24 8 28 10 32" fill="none" stroke="#1A7A2E" stroke-width="1.8" stroke-linecap="round" />
+  </g>
+
+  <!-- Underline -->
+  <line x1="10" y1="102" x2="110" y2="102" stroke="#1A7A2E" stroke-width="2" stroke-linecap="round" opacity="0.6" />
+</svg>

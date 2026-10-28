@@ -1,0 +1,223 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 320" width="680" height="320">
+  <defs>
+    <!-- Deep forest green gradient for text -->
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1A7A2E" />
+      <stop offset="40%" stop-color="#146B25" />
+      <stop offset="100%" stop-color="#0D4A1A" />
+    </linearGradient>
+
+    <!-- Globe gradient -->
+    <linearGradient id="globeGrad" x1="30%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" stop-color="#2E8B3E" />
+      <stop offset="50%" stop-color="#1A7A2E" />
+      <stop offset="100%" stop-color="#0D5A1D" />
+    </linearGradient>
+
+    <!-- Continent fill -->
+    <linearGradient id="continentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#E8F5E9" />
+    </linearGradient>
+
+    <!-- Leaf gradient -->
+    <linearGradient id="leafGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0D5A1D" />
+      <stop offset="50%" stop-color="#1A7A2E" />
+      <stop offset="100%" stop-color="#2E9B40" />
+    </linearGradient>
+
+    <!-- Swoosh gradient -->
+    <linearGradient id="swooshGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1A7A2E" stop-opacity="0.3" />
+      <stop offset="30%" stop-color="#1A7A2E" stop-opacity="0.85" />
+      <stop offset="60%" stop-color="#146B25" />
+      <stop offset="100%" stop-color="#0D4A1A" stop-opacity="0.6" />
+    </linearGradient>
+
+    <!-- Underline gradient -->
+    <linearGradient id="underlineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1A7A2E" stop-opacity="0.5" />
+      <stop offset="50%" stop-color="#146B25" />
+      <stop offset="100%" stop-color="#0D4A1A" stop-opacity="0.3" />
+    </linearGradient>
+
+    <!-- Globe clip -->
+    <clipPath id="globeClip">
+      <circle cx="370" cy="85" r="82" />
+    </clipPath>
+
+    <!-- Subtle shadow for globe -->
+    <filter id="globeShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0D4A1A" flood-opacity="0.15" />
+    </filter>
+  </defs>
+
+  <!-- Clean White Background -->
+  <rect width="680" height="320" fill="#FFFFFF" />
+
+  <!-- ============ GLOBE (positioned above/behind the text, between TERRA and AI) ============ -->
+  <g filter="url(#globeShadow)">
+    <!-- Globe circle - outline only with green fill showing oceans -->
+    <circle cx="370" cy="85" r="82" fill="url(#globeGrad)" opacity="0.92" />
+
+    <!-- Continents as white/light shapes clipped to globe -->
+    <g clip-path="url(#globeClip)">
+      <!-- Europe -->
+      <path d="M 350 28 C 355 25 365 22 372 26 C 376 29 380 25 385 27 C 388 30 392 28 395 32
+               C 397 36 393 40 389 42 C 386 43 388 48 385 50 C 382 52 378 50 375 52
+               C 372 54 368 52 365 50 C 362 48 358 50 355 48 C 352 46 348 42 350 38
+               C 351 34 348 30 350 28 Z"
+            fill="url(#continentGrad)" opacity="0.95" />
+
+      <!-- Africa -->
+      <path d="M 370 55 C 374 53 380 55 384 58 C 387 61 390 60 393 63
+               C 396 67 398 72 397 78 C 396 84 398 90 396 96
+               C 394 102 390 108 386 114 C 382 120 378 126 375 130
+               C 372 134 368 132 366 128 C 364 124 360 120 358 116
+               C 356 112 354 106 355 100 C 356 94 354 88 356 82
+               C 358 76 362 70 365 64 C 367 60 368 56 370 55 Z"
+            fill="url(#continentGrad)" opacity="0.95" />
+
+      <!-- North/South America (left side of globe) -->
+      <path d="M 310 35 C 316 30 324 28 330 32 C 334 35 338 34 340 38
+               C 342 42 340 46 338 50 C 336 54 334 52 332 56
+               C 330 60 328 64 326 68 C 324 72 320 76 318 80
+               C 316 84 312 88 310 92 C 308 96 306 100 308 104
+               C 310 108 314 106 316 110 C 318 114 316 118 314 122
+               C 312 126 308 130 305 134 C 302 138 298 136 296 132
+               C 294 128 292 122 294 116 C 296 110 292 104 294 98
+               C 295 92 297 86 300 80 C 302 74 305 68 304 62
+               C 303 56 306 48 308 42 C 309 38 308 36 310 35 Z"
+            fill="url(#continentGrad)" opacity="0.9" />
+
+      <!-- Greenland / Arctic -->
+      <path d="M 332 15 C 338 12 345 14 348 18 C 350 22 347 26 343 28
+               C 339 29 335 27 333 23 C 331 20 330 16 332 15 Z"
+            fill="url(#continentGrad)" opacity="0.85" />
+
+      <!-- Middle East / Arabia -->
+      <path d="M 395 52 C 399 50 404 52 408 56 C 411 60 414 65 412 70
+               C 410 74 406 72 402 68 C 398 64 394 60 393 56 C 393 54 394 53 395 52 Z"
+            fill="url(#continentGrad)" opacity="0.9" />
+
+      <!-- Globe latitude lines -->
+      <ellipse cx="370" cy="55" rx="75" ry="12" fill="none" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="0.8" />
+      <ellipse cx="370" cy="85" rx="82" ry="14" fill="none" stroke="#FFFFFF" stroke-opacity="0.12" stroke-width="0.8" />
+      <ellipse cx="370" cy="115" rx="75" ry="12" fill="none" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="0.8" />
+
+      <!-- Globe longitude arc -->
+      <ellipse cx="370" cy="85" rx="20" ry="82" fill="none" stroke="#FFFFFF" stroke-opacity="0.12" stroke-width="0.8" />
+    </g>
+
+    <!-- Globe outline ring -->
+    <circle cx="370" cy="85" r="82" fill="none" stroke="#1A7A2E" stroke-width="2.5" opacity="0.7" />
+  </g>
+
+  <!-- ============ CURVED SWOOSH (wraps around globe and becomes the underline) ============ -->
+  <!-- Back swoosh arc - starts from left, curves up behind globe -->
+  <path d="M 80 240 C 120 200 200 140 280 100 C 320 82 350 40 380 15"
+        fill="none"
+        stroke="url(#swooshGrad)"
+        stroke-width="4"
+        stroke-linecap="round"
+        opacity="0.6" />
+
+  <!-- Front swoosh - comes from globe area, sweeps down and right as the underline -->
+  <path d="M 340 165 C 360 175 380 170 400 165 C 430 155 450 160 470 172
+           C 490 184 500 210 480 228 C 460 244 420 252 380 254
+           C 340 256 280 254 240 250 C 200 246 150 248 120 252"
+        fill="none"
+        stroke="url(#swooshGrad)"
+        stroke-width="4.5"
+        stroke-linecap="round"
+        opacity="0.75" />
+
+  <!-- Main horizontal underline beneath text -->
+  <path d="M 60 262 L 640 262"
+        fill="none"
+        stroke="url(#underlineGrad)"
+        stroke-width="2.8"
+        stroke-linecap="round" />
+
+  <!-- ============ TERRA AI TEXT (Serif style, dark green) ============ -->
+  <g fill="url(#textGrad)">
+    <!-- Letter T (large, prominent) -->
+    <path d="M 28 160 L 132 160 L 132 174 L 90 174 L 90 270 L 72 270 L 72 174 L 28 174 Z" />
+
+    <!-- Letter E -->
+    <path d="M 138 185 L 138 270 L 198 270 L 198 256 L 156 256 L 156 234 L 192 234 L 192 222 L 156 222 L 156 199 L 196 199 L 196 185 Z" />
+
+    <!-- Letter R (first) -->
+    <path d="M 206 185 L 206 270 L 224 270 L 224 238 L 240 238 L 258 270 L 278 270 L 257 235
+             C 265 231 272 222 272 212 C 272 197 261 185 244 185 Z
+             M 224 199 L 242 199 C 252 199 256 204 256 212 C 256 220 252 225 242 225 L 224 225 Z" />
+
+    <!-- Letter R (second) -->
+    <path d="M 282 185 L 282 270 L 300 270 L 300 238 L 316 238 L 334 270 L 354 270 L 333 235
+             C 341 231 348 222 348 212 C 348 197 337 185 320 185 Z
+             M 300 199 L 318 199 C 328 199 332 204 332 212 C 332 220 328 225 318 225 L 300 225 Z" />
+
+    <!-- Letter A (of TERRA) -->
+    <path d="M 358 270 L 378 185 L 400 185 L 420 270 L 402 270 L 397 250 L 381 250 L 376 270 Z
+             M 384 237 L 394 237 L 389 210 Z" />
+  </g>
+
+  <!-- Space between TERRA and AI -->
+
+  <g fill="url(#textGrad)">
+    <!-- Letter A (of AI) - larger, prominent -->
+    <path d="M 468 270 L 498 160 L 528 160 L 558 270 L 538 270 L 530 244 L 496 244 L 488 270 Z
+             M 500 230 L 526 230 L 513 182 Z" />
+
+    <!-- Letter I (of AI) -->
+    <path d="M 572 160 L 596 160 L 596 270 L 572 270 Z" />
+  </g>
+
+  <!-- ============ SPARKLE STAR inside A of AI ============ -->
+  <g transform="translate(513, 210)">
+    <!-- 4-pointed diamond sparkle -->
+    <path d="M 0 -10 Q 1.2 -1.5 10 0 Q 1.2 1.5 0 10 Q -1.2 1.5 -10 0 Q -1.2 -1.5 0 -10 Z"
+          fill="#1A7A2E" />
+    <!-- Inner bright point -->
+    <circle cx="0" cy="0" r="1.5" fill="#2E9B40" />
+  </g>
+
+  <!-- ============ LEAF (sprouting from top-left of the T) ============ -->
+  <g transform="translate(42, 100)">
+    <!-- Leaf stem curving up from T -->
+    <path d="M 12 60 C 8 50 2 38 6 25 C 8 18 12 12 18 8"
+          fill="none"
+          stroke="#1A7A2E"
+          stroke-width="2.5"
+          stroke-linecap="round" />
+
+    <!-- Main leaf shape -->
+    <path d="M 6 25 C -2 18 -8 6 2 -8 C 12 -20 30 -22 42 -14
+             C 52 -8 48 4 38 12 C 28 20 16 28 6 25 Z"
+          fill="url(#leafGrad)" />
+
+    <!-- Leaf central vein -->
+    <path d="M 8 22 C 14 14 24 4 38 -10"
+          fill="none"
+          stroke="#FFFFFF"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-opacity="0.55" />
+
+    <!-- Secondary leaf veins -->
+    <path d="M 16 16 C 22 14 28 10 32 6"
+          fill="none" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" stroke-opacity="0.35" />
+    <path d="M 12 10 C 18 8 24 2 28 -2"
+          fill="none" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" stroke-opacity="0.35" />
+
+    <!-- Small secondary leaf -->
+    <path d="M 8 42 C 2 36 -4 28 4 20 C 10 14 20 16 22 22
+             C 24 28 16 36 8 42 Z"
+          fill="url(#leafGrad)" opacity="0.8" />
+
+    <!-- Secondary leaf vein -->
+    <path d="M 10 38 C 12 30 14 24 16 22"
+          fill="none" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" stroke-opacity="0.4" />
+  </g>
+</svg>

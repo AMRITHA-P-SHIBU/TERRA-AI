@@ -1,5 +1,6 @@
 import React from 'react';
 import { 
+  Home,
   Leaf, 
   Sparkles, 
   Flame, 
@@ -13,6 +14,7 @@ import {
 
 export default function Navbar({ activeTab, setActiveTab, currentUser, connectionStatus }) {
   const navItems = [
+    { id: 'home', label: 'Home', icon: Home },
     { id: 'feed', label: 'GreenFeed', icon: Leaf },
     { id: 'exchange', label: 'Eco Exchange', icon: ShoppingBag },
     { id: 'calculator', label: 'Carbon Tracker', icon: Flame },
@@ -27,25 +29,15 @@ export default function Navbar({ activeTab, setActiveTab, currentUser, connectio
         <div className="flex items-center justify-between h-18">
           {/* Logo & Brand */}
           <div 
-            onClick={() => setActiveTab('feed')} 
-            className="flex items-center gap-3 cursor-pointer group"
+            onClick={() => setActiveTab('home')} 
+            className="flex items-center cursor-pointer group py-1"
+            title="TERRA AI Home"
           >
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform">
-              <Leaf className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-700 bg-clip-text text-transparent">
-                  Terra AI
-                </span>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
-                  EcoSphere
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 hidden sm:block font-medium">
-                Sustainable Living & Environmental Platform
-              </p>
-            </div>
+            <img 
+              src="/terra-ai-logo.svg" 
+              alt="TERRA AI" 
+              className="h-11 sm:h-12 w-auto object-contain rounded-lg group-hover:scale-102 transition-transform" 
+            />
           </div>
 
           {/* Nav Items */}

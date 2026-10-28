@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
+import HomePage from './components/HomePage';
 import GreenFeed from './components/GreenFeed';
 import EcoExchange from './components/EcoExchange';
 import CarbonCalculator from './components/CarbonCalculator';
@@ -17,7 +18,7 @@ import {
 } from './data/mockData';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('feed');
+  const [activeTab, setActiveTab] = useState('home');
   const [currentUser, setCurrentUser] = useState(initialUser);
   const [posts, setPosts] = useState(initialFeedPosts);
   const [marketplaceItems, setMarketplaceItems] = useState(initialMarketplaceItems);
@@ -64,6 +65,15 @@ export default function App() {
     checkServer();
     return () => controller.abort();
   }, []);
+
+  if (activeTab === 'home') {
+    return (
+      <HomePage
+        onExplore={() => setActiveTab('feed')}
+        onNavigate={(tab) => setActiveTab(tab)}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800">
@@ -126,11 +136,15 @@ export default function App() {
       {/* Global Footer */}
       <footer className="bg-white border-t border-slate-200/80 py-8 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 font-bold text-slate-800">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span>Terra AI — EcoSphere Environmental Management</span>
+          <div 
+            onClick={() => setActiveTab('home')} 
+            className="flex items-center gap-2 cursor-pointer group"
+            title="TERRA AI"
+          >
+            <img src="/terra-ai-logo.svg" alt="TERRA AI" className="h-8 w-auto object-contain rounded" />
           </div>
           <div className="flex items-center gap-6 font-semibold">
+            <button onClick={() => setActiveTab('home')} className="text-emerald-700 font-bold hover:underline cursor-pointer">Landing Home</button>
             <button onClick={() => setActiveTab('feed')} className="hover:text-emerald-700 cursor-pointer">GreenFeed</button>
             <button onClick={() => setActiveTab('exchange')} className="hover:text-emerald-700 cursor-pointer">Eco Exchange</button>
             <button onClick={() => setActiveTab('calculator')} className="hover:text-emerald-700 cursor-pointer">Carbon Tracker</button>
