@@ -1,6 +1,33 @@
 # React + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Running the app
+
+Start the API in one terminal:
+
+```sh
+cd server
+npm run dev
+```
+
+Start the client in another terminal:
+
+```sh
+cd client
+npm run dev
+```
+
+Before starting the API, copy `server/.env.example` to `server/.env` and fill in
+the Supabase project URL and anon key from your Supabase project's API settings.
+Keep `server/.env` private; never put a service-role key in the client.
+
+The Vite development server proxies `/api` requests to the API at
+`http://127.0.0.1:3000`. The client displays the API and Supabase connection
+statuses. Supabase must be configured before its status can show as connected.
+
+The API can also be started without nodemon using `npm start` in the `server`
+directory.
+
+## Vite template notes
 
 Currently, two official plugins are available:
 
