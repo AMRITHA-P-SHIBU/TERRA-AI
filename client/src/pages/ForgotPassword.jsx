@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, ArrowLeft, Loader2, CheckCircle2, AlertCircle, Leaf } from 'lucide-react';
+import { supabase } from '../supabase';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -12,25 +13,42 @@ export default function ForgotPassword() {
     e.preventDefault();
     setError(null);
 
-    if (!email) {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) {
       setError('Please enter your email address.');
       return;
     }
 
     try {
       setLoading(true);
-      const res = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to dispatch reset instructions');
+      // 1. Send password reset email via Supabase Auth
+      try {
+        const redirectUrl = `${window.location.origin}/reset-password`;
+        const { error: sbError } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+          redirectTo: redirectUrl,
+        });
+        if (sbError) {
+          console.warn('[Supabase resetPasswordForEmail warning]:', sbError.message);
+        }
+      } catch (sbErr) {
+        console.warn('[Supabase resetPasswordForEmail exception]:', sbErr);
+      }
+
+      // 2. Also dispatch to local server auth endpoint for token/email fallback
+      try {
+        await fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: cleanEmail }),
+        });
+      } catch (srvErr) {
+        console.warn('[Server forgot-password fallback]:', srvErr);
+      }
 
       setSubmitted(true);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Failed to dispatch password reset request');
     } finally {
       setLoading(false);
     }
@@ -103,15 +121,22 @@ export default function ForgotPassword() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-sm shadow-lg shadow-emerald-500/20 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>Dispatch Reset Link</span>}
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Dispatching Link...</span>
+                  </>
+                ) : (
+                  <span>Send Reset Link</span>
+                )}
               </button>
 
-              <div className="text-center pt-2">
+              <div className="pt-4 text-center border-t border-slate-800/80">
                 <Link
                   to="/login"
-                  className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition"
+                  className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-emerald-400 transition"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Back to Sign In</span>

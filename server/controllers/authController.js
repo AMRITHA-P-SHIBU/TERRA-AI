@@ -42,7 +42,7 @@ const organizationSignupSchema = z.object({
 });
 
 const loginSchema = z.object({
-  email: z.string().trim().email('Invalid email address').toLowerCase(),
+  email: z.string().trim().min(1, 'Username or email is required').toLowerCase(),
   password: z.string().min(1, 'Password is required'),
   rememberMe: z.boolean().optional(),
   expectedRole: z.enum(['INDIVIDUAL', 'ORG_ADMIN', 'SUPER_ADMIN']).optional(),
@@ -256,12 +256,25 @@ export async function login(req, res) {
 
     const { email, password } = parseResult.data;
 
-    // Fetch user by email
-    const userRes = await query(
+    // Fetch user by email or username
+    let userRes = await query(
       `SELECT id, full_name, email, password_hash, account_type, status, email_verified, created_at
        FROM users WHERE email = $1`,
       [email]
     );
+
+    // If not found and input does not contain '@', check username / email prefix
+    if (userRes.rows.length === 0 && !email.includes('@')) {
+      const allUsers = await query('SELECT * FROM users ORDER BY created_at DESC');
+      const matched = allUsers.rows.find(
+        (u) =>
+          u.email?.toLowerCase().split('@')[0] === email ||
+          (u.full_name && u.full_name.toLowerCase().replace(/\s+/g, '') === email)
+      );
+      if (matched) {
+        userRes = { rows: [matched], rowCount: 1 };
+      }
+    }
 
     // Generic error message for security to prevent email enumeration
     const genericError = 'Invalid email or password';
@@ -330,6 +343,7 @@ export async function login(req, res) {
       account_type: userRecord.account_type,
       status: userRecord.status,
       email_verified: userRecord.email_verified,
+      must_change_password: Boolean(userRecord.must_change_password),
       created_at: userRecord.created_at,
     };
 
@@ -583,6 +597,75 @@ export async function verifyEmail(req, res) {
   }
 }
 
+/**
+ * 9. Change Password (Authenticated, e.g. first login or user settings)
+ */
+export async function changePassword(req, res) {
+  try {
+    const { newPassword, currentPassword } = req.body;
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({ error: 'New password must be at least 8 characters long.' });
+    }
+
+    const userId = req.user.id;
+
+    // Fetch user to verify current password if provided and not must_change_password
+    const userRes = await query('SELECT password_hash, must_change_password FROM users WHERE id = $1', [userId]);
+    if (userRes.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const userRecord = userRes.rows[0];
+
+    // If currentPassword is provided and user is not flagged as must_change_password, verify it
+    if (currentPassword && !userRecord.must_change_password) {
+      const match = await bcrypt.compare(currentPassword, userRecord.password_hash);
+      if (!match) {
+        return res.status(400).json({ error: 'Current password does not match.' });
+      }
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(12);
+    const password_hash = await bcrypt.hash(newPassword, salt);
+
+    // Update users table with password_hash and must_change_password = false
+    await query('UPDATE users SET password_hash = $1 WHERE id = $2', [password_hash, userId]);
+    await query('UPDATE users SET must_change_password = $1 WHERE id = $2', [false, userId]);
+
+    return res.json({ message: 'Password updated successfully! You can now use your new password.' });
+  } catch (error) {
+    console.error('[changePassword Error]:', error);
+    return res.status(500).json({ error: 'Failed to change password' });
+  }
+}
+
+/**
+ * 10. Sync Password (For syncing with Supabase Auth updates)
+ */
+export async function syncPassword(req, res) {
+  try {
+    const { email, newPassword } = req.body;
+    if (!email || !newPassword || newPassword.length < 8) {
+      return res.status(400).json({ error: 'Email and new password (min 8 chars) are required' });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const userRes = await query('SELECT id FROM users WHERE email = $1', [cleanEmail]);
+    if (userRes.rows.length > 0) {
+      const salt = await bcrypt.genSalt(12);
+      const password_hash = await bcrypt.hash(newPassword, salt);
+      await query('UPDATE users SET password_hash = $1 WHERE id = $2', [password_hash, userRes.rows[0].id]);
+      await query('UPDATE users SET must_change_password = $1 WHERE id = $2', [false, userRes.rows[0].id]);
+    }
+
+    return res.json({ message: 'Password sync complete' });
+  } catch (error) {
+    console.error('[syncPassword Error]:', error);
+    return res.status(500).json({ error: 'Failed to sync password' });
+  }
+}
+
 export default {
   signupIndividual,
   signupOrganization,
@@ -592,4 +675,6 @@ export default {
   forgotPassword,
   resetPassword,
   verifyEmail,
+  changePassword,
+  syncPassword,
 };

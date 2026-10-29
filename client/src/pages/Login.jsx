@@ -50,14 +50,14 @@ export default function Login() {
       {/* Top Navbar */}
       <div className="relative z-10 max-w-7xl mx-auto w-full px-4 mb-4 flex items-center justify-between">
         <Link to="/" className="inline-flex items-center gap-2 group cursor-pointer">
-          <img 
-            src="/terra-ai-logo.svg" 
-            alt="TERRA AI Logo" 
-            className="h-9 w-auto object-contain transition-transform group-hover:scale-105" 
+          <img
+            src="/terra-ai-logo.svg"
+            alt="TERRA AI Logo"
+            className="h-9 w-auto object-contain transition-transform group-hover:scale-105"
           />
         </Link>
-        <Link 
-          to="/signup" 
+        <Link
+          to="/signup"
           className="text-xs sm:text-sm font-bold text-emerald-800 hover:text-emerald-900 bg-white/80 border border-emerald-200/80 px-4 py-1.5 rounded-full shadow-xs transition"
         >
           Create Account
@@ -88,23 +88,29 @@ export default function Login() {
             </div>
           )}
 
-          <form className="space-y-5" onSubmit={handleSubmit}>
-            {/* Email Field */}
+          {/* Hidden dummy fields — trick browsers into targeting these instead of the real inputs */}
+          <input type="text" name="username" style={{ display: 'none' }} autoComplete="username" readOnly />
+          <input type="password" name="password" style={{ display: 'none' }} autoComplete="current-password" readOnly />
+
+          <form className="space-y-5" onSubmit={handleSubmit} autoComplete="off">
+            {/* Username / Email Field */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                Email Address
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                Username / Email
               </label>
               <div className="relative rounded-2xl shadow-2xs">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <Mail className="w-4 h-4" />
                 </div>
                 <input
-                  type="email"
+                  type="text"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@domain.com"
-                  className="block w-full pl-10 pr-4 py-3 bg-slate-50/70 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:bg-white transition"
+                  placeholder="Enter your username/email"
+                  autoComplete="off"
+                  name="terra-login-email"
+                  className="block w-full pl-11 pr-4 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm transition"
                 />
               </div>
             </div>
@@ -119,7 +125,7 @@ export default function Login() {
                   to="/forgot-password"
                   className="text-xs font-semibold text-emerald-800 hover:text-emerald-950 transition"
                 >
-                  Forgot?
+                  Forgot password? / Reset password
                 </Link>
               </div>
               <div className="relative rounded-2xl shadow-2xs">
@@ -131,8 +137,10 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  className="block w-full pl-10 pr-10 py-3 bg-slate-50/70 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:bg-white transition"
+                  placeholder="Enter your password"
+                  autoComplete="new-password"
+                  name="terra-login-password"
+                  className="block w-full pl-11 pr-11 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm transition"
                 />
                 <button
                   type="button"

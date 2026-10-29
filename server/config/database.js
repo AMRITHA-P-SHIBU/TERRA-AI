@@ -22,7 +22,7 @@ if (!supabaseUrl || !supabaseKey) {
   console.error('❌ SUPABASE_URL and SUPABASE_ANON_KEY must be set in server/.env');
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey, {
+export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: { persistSession: false },
 });
 
@@ -48,27 +48,49 @@ export async function query(text, params = []) {
   // ── USERS ─────────────────────────────────────────────────────────────────
 
   if (upper.startsWith('INSERT INTO USERS')) {
-    let full_name, email, password_hash, account_type, status, email_verified;
-    if (params.length >= 6) {
+    let full_name, email, password_hash, account_type, status, email_verified, must_change_password;
+    if (params.length >= 7) {
+      [full_name, email, password_hash, account_type, status, email_verified, must_change_password] = params;
+    } else if (params.length === 6) {
       [full_name, email, password_hash, account_type, status, email_verified] = params;
+      if (upper.includes('MUST_CHANGE_PASSWORD')) {
+        must_change_password = true;
+      }
     } else {
       [full_name, email, password_hash] = params;
       account_type = upper.includes("'ORG_ADMIN'") ? 'ORG_ADMIN' : 'INDIVIDUAL';
       status = upper.includes("'PENDING'") ? 'PENDING' : 'ACTIVE';
       email_verified = upper.includes('TRUE');
+      if (upper.includes('MUST_CHANGE_PASSWORD') && upper.includes('TRUE')) {
+        must_change_password = true;
+      }
     }
-    const { data, error } = await supabase
+
+    const insertPayload = {
+      full_name,
+      email: email?.toLowerCase(),
+      password_hash,
+      account_type: account_type || 'INDIVIDUAL',
+      status: status || 'ACTIVE',
+      email_verified: email_verified ?? false,
+    };
+    if (must_change_password !== undefined) {
+      insertPayload.must_change_password = Boolean(must_change_password);
+    }
+
+    let { data, error } = await supabase
       .from('users')
-      .insert({
-        full_name,
-        email: email?.toLowerCase(),
-        password_hash,
-        account_type: account_type || 'INDIVIDUAL',
-        status: status || 'ACTIVE',
-        email_verified: email_verified ?? false,
-      })
-      .select('id, full_name, email, account_type, status, email_verified, created_at')
+      .insert(insertPayload)
+      .select('*')
       .single();
+
+    if (error && error.message?.includes('must_change_password')) {
+      delete insertPayload.must_change_password;
+      const retry = await supabase.from('users').insert(insertPayload).select('*').single();
+      data = retry.data;
+      error = retry.error;
+    }
+
     if (error) {
       const err = new Error(error.message);
       if (error.code === '23505') err.code = '23505';
@@ -93,8 +115,28 @@ export async function query(text, params = []) {
   // UPDATE users SET password_hash
   if (upper.startsWith('UPDATE USERS SET PASSWORD_HASH')) {
     const [password_hash, id] = params;
-    const { error } = await supabase.from('users').update({ password_hash }).eq('id', id);
+    const updatePayload = { password_hash };
+    if (upper.includes('MUST_CHANGE_PASSWORD = FALSE') || upper.includes('MUST_CHANGE_PASSWORD = $')) {
+      updatePayload.must_change_password = false;
+    }
+    let { error } = await supabase.from('users').update(updatePayload).eq('id', id);
+    if (error && error.message?.includes('must_change_password')) {
+      delete updatePayload.must_change_password;
+      const retry = await supabase.from('users').update(updatePayload).eq('id', id);
+      error = retry.error;
+    }
     if (error) throw new Error(error.message);
+    return { rows: [], rowCount: 1 };
+  }
+
+  // UPDATE users SET must_change_password
+  if (upper.startsWith('UPDATE USERS SET MUST_CHANGE_PASSWORD')) {
+    const [must_change_password, id] = params;
+    try {
+      await supabase.from('users').update({ must_change_password: Boolean(must_change_password) }).eq('id', id);
+    } catch {
+      // Ignored if column not added yet
+    }
     return { rows: [], rowCount: 1 };
   }
 
@@ -119,7 +161,7 @@ export async function query(text, params = []) {
     const email = params[0]?.toLowerCase();
     const { data, error } = await supabase
       .from('users')
-      .select('id, full_name, email, password_hash, account_type, status, email_verified, created_at')
+      .select('*')
       .eq('email', email)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -130,7 +172,7 @@ export async function query(text, params = []) {
   if (upper.includes('FROM USERS') && upper.includes('WHERE ID =')) {
     const { data, error } = await supabase
       .from('users')
-      .select('id, full_name, email, password_hash, account_type, status, email_verified, created_at')
+      .select('*')
       .eq('id', params[0])
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -141,7 +183,7 @@ export async function query(text, params = []) {
   if (upper.includes('FROM USERS') && upper.includes('ORDER BY CREATED_AT DESC')) {
     const { data, error } = await supabase
       .from('users')
-      .select('id, full_name, email, account_type, status, email_verified, created_at')
+      .select('*')
       .order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
     return { rows: data || [], rowCount: (data || []).length };
@@ -172,8 +214,20 @@ export async function query(text, params = []) {
     return { rows: data || [], rowCount: (data || []).length };
   }
 
+  if (upper.includes('FROM ORGANIZATIONS') && upper.includes("APPROVAL_STATUS = 'APPROVED'")) {
+    const { data, error } = await supabase.from('organizations').select('*').eq('approval_status', 'APPROVED').order('created_at', { ascending: true });
+    if (error) throw new Error(error.message);
+    return { rows: data || [], rowCount: (data || []).length };
+  }
+
   if (upper.includes('FROM ORGANIZATIONS') && upper.includes('ORDER BY CREATED_AT DESC')) {
     const { data, error } = await supabase.from('organizations').select('*').order('created_at', { ascending: false });
+    if (error) throw new Error(error.message);
+    return { rows: data || [], rowCount: (data || []).length };
+  }
+
+  if (upper.includes('FROM ORGANIZATIONS')) {
+    const { data, error } = await supabase.from('organizations').select('*');
     if (error) throw new Error(error.message);
     return { rows: data || [], rowCount: (data || []).length };
   }
@@ -203,6 +257,18 @@ export async function query(text, params = []) {
       .single();
     if (error) { const err = new Error(error.message); if (error.code === '23505') err.code = '23505'; throw err; }
     return { rows: [data], rowCount: 1 };
+  }
+
+  // specific member lookup in an org
+  if (upper.includes('FROM ORGANIZATION_MEMBERS') && upper.includes('WHERE ORGANIZATION_ID =') && upper.includes('USER_ID =')) {
+    const [orgId, userId] = params;
+    const { data, error } = await supabase
+      .from('organization_members')
+      .select('*')
+      .eq('organization_id', orgId)
+      .eq('user_id', userId);
+    if (error) throw new Error(error.message);
+    return { rows: data || [], rowCount: (data || []).length };
   }
 
   // membership lookup for a user (join with organizations)

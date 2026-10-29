@@ -9,6 +9,8 @@ import {
   forgotPassword,
   resetPassword,
   verifyEmail,
+  changePassword,
+  syncPassword,
 } from '../controllers/authController.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { documentUpload } from '../middleware/upload.js';
@@ -42,6 +44,8 @@ router.get('/me', authenticate, getMe);
 // Password & Email verification
 router.post('/forgot-password', authLimiter, forgotPassword);
 router.post('/reset-password', authLimiter, resetPassword);
+router.post('/sync-password', authLimiter, syncPassword);
+router.post('/change-password', authenticate, changePassword);
 router.get('/verify-email', verifyEmail);
 
 export default router;
