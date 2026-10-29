@@ -1,3 +1,4 @@
+import BackButton from "../components/BackButton";
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, AlertCircle, Loader2, Leaf, ArrowRight } from 'lucide-react';
@@ -42,13 +43,16 @@ export default function VerifyEmail() {
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10 px-4">
-        <Link to="/" className="inline-flex items-center group mb-4">
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <BackButton fallback="/login" label="Back" />
+          <Link to="/" className="inline-flex items-center group mb-4">
           <img 
             src="/terra-ai-logo.svg" 
             alt="TERRA AI Logo" 
             className="h-12 w-auto object-contain transition-transform group-hover:scale-105" 
           />
         </Link>
+        </div>
         <h1 className="text-2xl font-extrabold text-white">Email Verification</h1>
       </div>
 

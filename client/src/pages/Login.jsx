@@ -1,3 +1,4 @@
+import BackButton from "../components/BackButton";
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -47,22 +48,25 @@ export default function Login() {
       <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-100/50 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-teal-100/40 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Top Navbar */}
-      <div className="relative z-10 max-w-7xl mx-auto w-full px-4 mb-4 flex items-center justify-between">
-        <Link to="/" className="inline-flex items-center gap-2 group cursor-pointer">
-          <img
-            src="/terra-ai-logo.svg"
-            alt="TERRA AI Logo"
-            className="h-9 w-auto object-contain transition-transform group-hover:scale-105"
-          />
-        </Link>
-        <Link
-          to="/signup"
-          className="text-xs sm:text-sm font-bold text-emerald-800 hover:text-emerald-900 bg-white/80 border border-emerald-200/80 px-4 py-1.5 rounded-full shadow-xs transition"
-        >
-          Create Account
-        </Link>
-      </div>
+      {/* Standard Website Top Header Bar */}
+      <header className="relative z-10 w-full px-4 sm:px-8 py-5 border-b border-emerald-100/60 mb-6">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <BackButton fallback="/" label="Back" />
+          <Link to="/" className="inline-flex items-center group cursor-pointer" title="TERRA AI Home">
+            <img 
+              src="/terra-ai-logo.svg" 
+              alt="TERRA AI Logo" 
+              className="h-10 w-auto object-contain transition-transform group-hover:scale-105" 
+            />
+          </Link>
+          <Link 
+            to="/signup" 
+            className="text-xs sm:text-sm font-bold text-emerald-800 hover:text-emerald-950 bg-white/80 border border-emerald-200/80 px-4 py-1.5 rounded-full shadow-2xs transition"
+          >
+            Create Account
+          </Link>
+        </div>
+      </header>
 
       {/* Main Form Center */}
       <div className="relative z-10 sm:mx-auto sm:w-full sm:max-w-md px-4">

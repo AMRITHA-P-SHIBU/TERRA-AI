@@ -1,3 +1,4 @@
+import BackButton from "../components/BackButton";
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -155,15 +156,28 @@ export default function OrganizationSignup() {
       {/* Background Glow */}
       <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-teal-50 rounded-full blur-[140px] pointer-events-none" />
 
+      {/* Standard Website Top Header Bar */}
+      <header className="relative z-10 w-full px-4 sm:px-8 py-5 border-b border-teal-100/60 mb-6">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <BackButton fallback="/signup" label="Back" />
+          <Link to="/" className="inline-flex items-center group cursor-pointer" title="TERRA AI Home">
+            <img 
+              src="/terra-ai-logo.svg" 
+              alt="TERRA AI Logo" 
+              className="h-10 w-auto object-contain transition-transform group-hover:scale-105" 
+            />
+          </Link>
+          <Link 
+            to="/login/organization" 
+            className="text-xs sm:text-sm font-bold text-teal-800 hover:text-teal-950 bg-white/80 border border-teal-200/80 px-4 py-1.5 rounded-full shadow-2xs transition"
+          >
+            Org Sign In
+          </Link>
+        </div>
+      </header>
+
       {/* Header */}
-      <div className="sm:mx-auto sm:w-full sm:max-w-2xl text-center relative z-10 px-4">
-        <Link to="/" className="inline-flex items-center group mb-4">
-          <img 
-            src="/terra-ai-logo.svg" 
-            alt="TERRA AI Logo" 
-            className="h-12 w-auto object-contain transition-transform group-hover:scale-105" 
-          />
-        </Link>
+      <div className="sm:mx-auto sm:w-full sm:max-w-2xl text-center relative z-10 px-4 mb-2">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight">
           Register Your Organization
         </h1>

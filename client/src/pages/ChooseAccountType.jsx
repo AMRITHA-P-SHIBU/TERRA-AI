@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Building2, ArrowRight, ShieldCheck, Leaf, Sparkles, CheckCircle2, Globe2, Compass } from 'lucide-react';
+import BackButton from "../components/BackButton";
 
 export default function ChooseAccountType() {
   const navigate = useNavigate();
@@ -12,22 +13,32 @@ export default function ChooseAccountType() {
       <div className="absolute top-1/3 -right-32 w-[30rem] h-[30rem] bg-teal-100/40 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 left-1/3 w-[28rem] h-[28rem] bg-[#edf6dd]/80 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Top Navbar Bar */}
-      <header className="relative z-10 max-w-7xl mx-auto w-full px-6 pt-6 flex items-center justify-between">
-        <Link to="/" className="inline-flex items-center gap-2.5 group cursor-pointer">
-          <img 
-            src="/terra-ai-logo.svg" 
-            alt="TERRA AI Logo" 
-            className="h-10 w-auto object-contain transition-transform group-hover:scale-105" 
-          />
-        </Link>
-        <Link 
-          to="/" 
-          className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-emerald-800 hover:text-emerald-900 bg-white/80 hover:bg-white border border-emerald-200/80 px-4 py-2 rounded-full shadow-xs backdrop-blur-xs transition-all"
-        >
-          <span>Return Home</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
+      {/* Standard Website Top Header Bar */}
+      <header className="sticky top-0 z-30 bg-[#fafcf8]/85 backdrop-blur-md border-b border-emerald-100/60">
+        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          {/* Left: Standard Navigation Back Button */}
+          <div className="flex items-center gap-4">
+            <BackButton fallback="/" label="Back" />
+          </div>
+
+          {/* Center: Brand Logo */}
+          <Link to="/" className="inline-flex items-center group cursor-pointer" title="TERRA AI Home">
+            <img 
+              src="/terra-ai-logo.svg" 
+              alt="TERRA AI Logo" 
+              className="h-10 w-auto object-contain transition-transform group-hover:scale-105" 
+            />
+          </Link>
+
+          {/* Right: Quick Action Link */}
+          <Link 
+            to="/" 
+            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-emerald-800 hover:text-emerald-950 bg-white/80 hover:bg-white border border-emerald-200/80 px-4 py-2 rounded-full shadow-2xs backdrop-blur-xs transition-all"
+          >
+            <span>Home</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
       </header>
 
       {/* Main Container */}

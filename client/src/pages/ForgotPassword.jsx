@@ -1,3 +1,4 @@
+import BackButton from "../components/BackButton";
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, ArrowLeft, Loader2, CheckCircle2, AlertCircle, Leaf } from 'lucide-react';
@@ -57,13 +58,16 @@ export default function ForgotPassword() {
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10 px-4">
-        <Link to="/" className="inline-flex items-center group mb-4">
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <BackButton fallback="/login" label="Back" />
+          <Link to="/" className="inline-flex items-center group mb-4">
           <img 
             src="/terra-ai-logo.svg" 
             alt="TERRA AI Logo" 
             className="h-12 w-auto object-contain transition-transform group-hover:scale-105" 
           />
         </Link>
+        </div>
         <h1 className="text-2xl font-extrabold text-white">Reset Your Password</h1>
         <p className="mt-2 text-xs text-slate-400">
           Enter your registered email and we'll dispatch password recovery instructions.

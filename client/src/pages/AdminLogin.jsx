@@ -1,3 +1,4 @@
+import BackButton from "../components/BackButton";
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -49,6 +50,9 @@ export default function AdminLogin() {
 
       {/* Header */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10">
+        <div className="flex justify-start mb-4">
+          <BackButton fallback="/" label="Back to Home" />
+        </div>
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 mb-4 shadow-xl shadow-cyan-500/10">
           <ShieldCheck className="w-8 h-8" />
         </div>

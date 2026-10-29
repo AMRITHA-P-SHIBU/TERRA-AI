@@ -1,3 +1,4 @@
+import BackButton from "../components/BackButton";
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -41,6 +42,7 @@ export default function PendingApproval() {
       {/* Top Navbar Header */}
       <div className="max-w-3xl mx-auto w-full flex items-center justify-between pb-6 border-b border-slate-800 relative z-10">
         <div className="flex items-center gap-3">
+          <BackButton fallback="/" label="Back to Home" />
           <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
             <Building2 className="w-5 h-5" />
           </div>

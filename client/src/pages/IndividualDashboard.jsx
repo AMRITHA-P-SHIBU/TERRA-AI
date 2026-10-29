@@ -393,5 +393,6 @@ export default function IndividualDashboard({ onSelectTab }) {
           </div>
         )}
       </div>
-      );
+    </div>
+  );
 }

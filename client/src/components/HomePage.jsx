@@ -72,6 +72,7 @@ export default function HomePage({ onExplore, onNavigate }) {
   const [donationInitiative, setDonationInitiative] = useState('trees');
   const [donationSuccess, setDonationSuccess] = useState(false);
 
+
   // 3 Sections of Fun Environmental Activities To-Do Lists (Exactly 3 per section)
   const initialTodos = {
     'green-living': [

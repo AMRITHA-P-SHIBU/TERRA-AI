@@ -1,3 +1,4 @@
+import BackButton from "../components/BackButton";
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -49,35 +50,51 @@ export default function OrganizationLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background Ambience & Grid */}
-      <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-30 pointer-events-none" />
-      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen bg-[#fafcf8] flex flex-col justify-between py-8 sm:py-12 sm:px-6 lg:px-8 relative overflow-hidden font-sans selection:bg-teal-100 selection:text-teal-900">
+      {/* Soft Ambient Background Elements */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-teal-100/50 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-cyan-100/40 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Header */}
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10">
-        <Link to="/" className="inline-flex items-center group mb-4">
-          <img 
-            src="/terra-ai-logo.svg" 
-            alt="TERRA AI Logo" 
-            className="h-12 w-auto object-contain transition-transform group-hover:scale-105" 
-          />
-        </Link>
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-          Organization Sign In
-        </h2>
-        <p className="mt-2 text-sm text-slate-400">
-          Enter your registered login email and password to access the Organization Portal
-        </p>
-      </div>
+      {/* Standard Website Top Header Bar */}
+      <header className="relative z-10 w-full px-4 sm:px-8 py-5 border-b border-teal-100/60 mb-6">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <BackButton fallback="/" label="Back" />
+          <Link to="/" className="inline-flex items-center group cursor-pointer" title="TERRA AI Home">
+            <img 
+              src="/terra-ai-logo.svg" 
+              alt="TERRA AI Logo" 
+              className="h-10 w-auto object-contain transition-transform group-hover:scale-105" 
+            />
+          </Link>
+          <Link 
+            to="/signup/organization" 
+            className="text-xs sm:text-sm font-bold text-teal-800 hover:text-teal-950 bg-white/80 border border-teal-200/80 px-4 py-1.5 rounded-full shadow-2xs transition"
+          >
+            Register Org
+          </Link>
+        </div>
+      </header>
 
-      {/* Main Form Card */}
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10 px-4">
-        <div className="bg-slate-900/90 backdrop-blur-xl py-8 px-6 sm:px-10 shadow-2xl rounded-3xl border border-slate-800">
+      {/* Main Form Center */}
+      <div className="relative z-10 sm:mx-auto sm:w-full sm:max-w-md px-4">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-200 text-teal-800 text-xs font-bold mb-3 shadow-xs">
+            <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
+            <span>Organization Portal</span>
+          </div>
+          <h2 className="text-3xl font-black text-[#133e24] tracking-tight">
+            Organization Sign In
+          </h2>
+          <p className="mt-2 text-sm text-slate-600">
+            Enter your credentials to access your organization dashboard & sustainability data
+          </p>
+        </div>
+
+        {/* Card Box */}
+        <div className="bg-white/95 backdrop-blur-md py-8 px-6 sm:px-10 shadow-[0_12px_35px_-8px_rgba(13,148,136,0.12)] rounded-3xl border border-teal-100">
           {error && (
-            <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-3 text-rose-300 text-sm animate-shake">
-              <AlertCircle className="w-5 h-5 shrink-0 text-rose-400 mt-0.5" />
+            <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 flex items-start gap-3 text-rose-700 text-sm">
+              <AlertCircle className="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
@@ -89,12 +106,12 @@ export default function OrganizationLogin() {
           <form className="space-y-5" onSubmit={handleSubmit} autoComplete="off">
             {/* Username / Email */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                 Username / Email
               </label>
-              <div className="relative rounded-xl shadow-sm">
+              <div className="relative rounded-2xl shadow-2xs">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <Mail className="h-5 w-5" />
+                  <Mail className="h-4 w-4" />
                 </div>
                 <input
                   type="text"
@@ -104,7 +121,7 @@ export default function OrganizationLogin() {
                   placeholder="Enter your username/email"
                   autoComplete="off"
                   name="terra-org-email"
-                  className="block w-full pl-11 pr-4 py-3 bg-slate-950/70 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm transition"
+                  className="block w-full pl-10 pr-4 py-3 bg-slate-50/70 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:bg-white transition"
                 />
               </div>
             </div>
@@ -112,34 +129,34 @@ export default function OrganizationLogin() {
             {/* Password */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Password
                 </label>
                 <Link
                   to="/forgot-password"
-                  className="text-xs text-cyan-400 hover:text-cyan-300 transition"
+                  className="text-xs font-semibold text-teal-800 hover:text-teal-950 transition"
                 >
-                  Forgot password?
+                  Forgot?
                 </Link>
               </div>
-              <div className="relative rounded-xl shadow-sm">
+              <div className="relative rounded-2xl shadow-2xs">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <Lock className="h-5 w-5" />
+                  <Lock className="h-4 w-4" />
                 </div>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder="••••••••••••"
                   autoComplete="new-password"
                   name="terra-org-password"
-                  className="block w-full pl-11 pr-11 py-3 bg-slate-950/70 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm transition"
+                  className="block w-full pl-10 pr-10 py-3 bg-slate-50/70 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:bg-white transition"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200 transition"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -147,19 +164,19 @@ export default function OrganizationLogin() {
             </div>
 
             {/* Remember Me */}
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
+            <div className="flex items-center justify-between pt-1">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-cyan-500 focus:ring-cyan-400 focus:ring-offset-slate-900"
+                  className="w-4 h-4 rounded border-slate-300 text-teal-700 focus:ring-teal-500"
                 />
-                <span className="text-xs text-slate-400">Remember this device</span>
+                <span className="text-xs text-slate-600 font-medium">Remember this device</span>
               </label>
 
-              <div className="flex items-center gap-1.5 text-xs text-cyan-400/90 font-medium">
-                <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
+              <div className="flex items-center gap-1.5 text-xs text-teal-800 font-medium">
+                <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
                 <span>Verified Portal</span>
               </div>
             </div>
@@ -168,39 +185,39 @@ export default function OrganizationLogin() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white font-semibold text-sm shadow-lg shadow-cyan-600/20 hover:shadow-cyan-600/30 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed group cursor-pointer"
+              className="w-full mt-2 py-3.5 px-4 rounded-xl bg-gradient-to-r from-teal-700 via-teal-600 to-cyan-700 hover:from-teal-600 hover:to-cyan-600 text-white font-bold text-sm shadow-md shadow-teal-800/20 hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
                   <span>Verifying Credentials...</span>
                 </>
               ) : (
                 <>
                   <span>Sign In to Organization</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
 
-          {/* Registration & Other Links */}
-          <div className="mt-6 pt-5 border-t border-slate-800 space-y-3 text-center">
-            <p className="text-xs text-slate-400">
+          {/* Registration & Citizen Switch */}
+          <div className="mt-6 pt-5 border-t border-slate-100 space-y-2.5 text-center">
+            <p className="text-xs text-slate-500">
               Need to register a new organization?{' '}
               <Link
                 to="/signup/organization"
-                className="text-cyan-400 hover:text-cyan-300 font-semibold underline underline-offset-4"
+                className="text-teal-800 hover:text-teal-950 font-bold underline"
               >
                 Register Organization
               </Link>
             </p>
 
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               Are you an individual citizen?{' '}
               <Link
                 to="/login"
-                className="text-emerald-400 hover:text-emerald-300 font-semibold underline underline-offset-4"
+                className="text-emerald-800 hover:text-emerald-950 font-bold underline"
               >
                 Citizen Sign In
               </Link>
@@ -208,6 +225,11 @@ export default function OrganizationLogin() {
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="relative z-10 text-center text-xs text-slate-500 pt-6">
+        <p>© 2026 Terra AI • Sustainable Living Intelligence</p>
+      </footer>
     </div>
   );
 }

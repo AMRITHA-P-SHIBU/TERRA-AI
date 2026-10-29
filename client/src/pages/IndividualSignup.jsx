@@ -1,3 +1,4 @@
+import BackButton from "../components/BackButton";
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -82,19 +83,32 @@ export default function IndividualSignup() {
       {/* Background Glows */}
       <div className="absolute top-1/4 left-1/3 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-50 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Header */}
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10">
-        <Link to="/" className="inline-flex items-center group mb-4">
-          <img 
-            src="/terra-ai-logo.svg" 
-            alt="TERRA AI Logo" 
-            className="h-12 w-auto object-contain transition-transform group-hover:scale-105" 
-          />
-        </Link>
+      {/* Standard Website Top Header Bar */}
+      <header className="relative z-10 w-full px-4 sm:px-8 py-5 border-b border-emerald-100/60 mb-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <BackButton fallback="/signup" label="Back" />
+          <Link to="/" className="inline-flex items-center group cursor-pointer" title="TERRA AI Home">
+            <img 
+              src="/terra-ai-logo.svg" 
+              alt="TERRA AI Logo" 
+              className="h-10 w-auto object-contain transition-transform group-hover:scale-105" 
+            />
+          </Link>
+          <Link 
+            to="/login" 
+            className="text-xs sm:text-sm font-bold text-emerald-800 hover:text-emerald-950 bg-white/80 border border-emerald-200/80 px-4 py-1.5 rounded-full shadow-2xs transition"
+          >
+            Sign In
+          </Link>
+        </div>
+      </header>
+
+      {/* Title Header */}
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10 mb-4 px-4">
         <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight">
           Create Individual Account
         </h2>
-        <p className="mt-2 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-slate-500">
           Immediate access to GreenFeed, Eco Exchange, and Carbon Tracking
         </p>
       </div>

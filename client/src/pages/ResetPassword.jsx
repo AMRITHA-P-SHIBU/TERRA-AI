@@ -1,3 +1,4 @@
+import BackButton from "../components/BackButton";
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Lock, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, Leaf, ArrowRight } from 'lucide-react';
@@ -138,13 +139,16 @@ export default function ResetPassword() {
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10 px-4">
-        <Link to="/" className="inline-flex items-center group mb-4">
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <BackButton fallback="/login" label="Back" />
+          <Link to="/" className="inline-flex items-center group mb-4">
           <img 
             src="/terra-ai-logo.svg" 
             alt="TERRA AI Logo" 
             className="h-12 w-auto object-contain transition-transform group-hover:scale-105" 
           />
         </Link>
+        </div>
         <h1 className="text-2xl font-extrabold text-white">Set New Password</h1>
         <p className="mt-2 text-xs text-slate-400">
           Enter a new secure password for your Terra AI account
