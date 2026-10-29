@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -14,17 +14,72 @@ import {
   UserCheck,
   CheckCircle2,
   Calendar,
+  Lock,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Loader2,
+  X,
+  KeyRound,
 } from 'lucide-react';
 
 export default function IndividualDashboard({ onSelectTab }) {
-  const { user } = useAuth();
+  const { user, changePassword } = useAuth();
   const navigate = useNavigate();
+
+  // Password Change Modal State (auto-opens if must_change_password is true)
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [changeLoading, setChangeLoading] = useState(false);
+  const [changeError, setChangeError] = useState(null);
+  const [changeSuccess, setChangeSuccess] = useState(null);
+
+  useEffect(() => {
+    if (user?.must_change_password) {
+      setPasswordModalOpen(true);
+    }
+  }, [user]);
 
   const handleLaunchModule = (tab) => {
     if (onSelectTab) {
       onSelectTab(tab);
     } else {
       navigate(`/${tab}`);
+    }
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setChangeError(null);
+    setChangeSuccess(null);
+
+    if (!newPassword || newPassword.length < 8) {
+      setChangeError('Password must be at least 8 characters long.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setChangeError('Passwords do not match.');
+      return;
+    }
+
+    try {
+      setChangeLoading(true);
+      await changePassword(newPassword);
+      setChangeSuccess('Password updated successfully! Your account is now fully secured.');
+      setNewPassword('');
+      setConfirmPassword('');
+
+      setTimeout(() => {
+        setChangeSuccess(null);
+        setPasswordModalOpen(false);
+      }, 1800);
+    } catch (err) {
+      setChangeError(err.message || 'Failed to update password');
+    } finally {
+      setChangeLoading(false);
     }
   };
 
@@ -99,28 +154,19 @@ export default function IndividualDashboard({ onSelectTab }) {
 
         <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Account Status</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-              <ShieldCheck className="w-4 h-4" />
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Community Badges</span>
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+              <Sparkles className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-emerald-400 mt-3">ACTIVE</p>
-          <p className="text-xs text-slate-400 mt-1 font-medium">Self-registered Citizen</p>
+          <p className="text-2xl font-black text-white mt-3">3 <span className="text-sm font-semibold text-slate-400">Badges</span></p>
+          <p className="text-xs text-amber-400 mt-1 font-medium">Clean Champion Unlocked</p>
         </div>
       </div>
 
-      {/* Terra AI Module Launchpad */}
-      <div>
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-emerald-400" />
-            <h2 className="text-lg font-bold text-white tracking-tight">
-              Terra AI Platform Modules
-            </h2>
-          </div>
-          <span className="text-xs text-slate-400">Explore integrated features</span>
-        </div>
-
+      {/* Main Platform Navigation Modules */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-bold text-white tracking-tight">Explore Sustainability Tools</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {/* Module 1: GreenFeed */}
           <div
@@ -138,7 +184,7 @@ export default function IndividualDashboard({ onSelectTab }) {
                 <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-400 transition" />
               </div>
               <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                Share proof of tree planting, zero-waste meal prep, and beach cleanups. Earn verified EcoPoints for each approved activity.
+                Post proof of green actions like tree planting, beach cleanup, and cycling. Earn verified EcoPoints from moderators.
               </p>
             </div>
           </div>
@@ -146,7 +192,7 @@ export default function IndividualDashboard({ onSelectTab }) {
           {/* Module 2: Eco Exchange Hub */}
           <div
             onClick={() => handleLaunchModule('exchange')}
-            className="group cursor-pointer bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-teal-500/40 rounded-2xl p-6 transition-all shadow-lg flex items-start gap-4"
+            className="group cursor-pointer bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-emerald-500/40 rounded-2xl p-6 transition-all shadow-lg flex items-start gap-4"
           >
             <div className="w-12 h-12 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
               <ShoppingBag className="w-6 h-6" />
@@ -159,7 +205,7 @@ export default function IndividualDashboard({ onSelectTab }) {
                 <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-teal-400 transition" />
               </div>
               <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                Circular barter marketplace for pre-loved terracotta pots, coconut planters, compost kits, and organic seeds.
+                Circular economy marketplace for exchanging, donating, or selling pre-loved sustainable goods and gardening supplies.
               </p>
             </div>
           </div>
@@ -175,7 +221,7 @@ export default function IndividualDashboard({ onSelectTab }) {
             <div className="flex-1">
               <div className="flex items-center justify-between">
                 <h3 className="font-bold text-white group-hover:text-cyan-300 transition text-base">
-                  Carbon Footprint Tracker
+                  Personal Carbon Tracker
                 </h3>
                 <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-cyan-400 transition" />
               </div>
@@ -220,7 +266,14 @@ export default function IndividualDashboard({ onSelectTab }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setPasswordModalOpen(true)}
+            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-emerald-400 border border-slate-700 font-semibold flex items-center gap-1.5 transition cursor-pointer"
+          >
+            <KeyRound className="w-3.5 h-3.5" />
+            <span>Change Password</span>
+          </button>
           <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full font-medium">
             Status: ACTIVE
           </span>
@@ -229,6 +282,115 @@ export default function IndividualDashboard({ onSelectTab }) {
           </span>
         </div>
       </div>
+
+      {/* Password Change / First Login Prompt Modal */}
+      {passwordModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-emerald-500/30 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative animate-scaleUp">
+            {!user?.must_change_password && (
+              <button
+                onClick={() => setPasswordModalOpen(false)}
+                className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">
+                  {user?.must_change_password ? 'Set Your New Password' : 'Change Password'}
+                </h3>
+                <p className="text-xs text-slate-400">
+                  {user?.must_change_password
+                    ? 'Please update your temporary password to continue.'
+                    : 'Choose a new secure password for your account.'}
+                </p>
+              </div>
+            </div>
+
+            {changeSuccess && (
+              <div className="mb-4 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                <span>{changeSuccess}</span>
+              </div>
+            )}
+
+            {changeError && (
+              <div className="mb-4 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                <span>{changeError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  New Password (min 8 chars)
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="block w-full pl-4 pr-11 py-2.5 bg-slate-950/70 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder-slate-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white transition cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  Confirm New Password
+                </label>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="block w-full px-4 py-2.5 bg-slate-950/70 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder-slate-400"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                {!user?.must_change_password && (
+                  <button
+                    type="button"
+                    onClick={() => setPasswordModalOpen(false)}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition"
+                  >
+                    Cancel
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  disabled={changeLoading}
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition"
+                >
+                  {changeLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Check className="w-4 h-4" />
+                  )}
+                  <span>Save New Password</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

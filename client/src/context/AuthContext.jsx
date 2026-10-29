@@ -145,6 +145,32 @@ export function AuthProvider({ children }) {
   };
 
   /**
+   * Change Password (for first login update or profile settings)
+   */
+  const changePassword = async (newPassword, currentPassword) => {
+    setError(null);
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ newPassword, currentPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to update password');
+      }
+      if (user) {
+        setUser((prev) => (prev ? { ...prev, must_change_password: false } : prev));
+      }
+      return data;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  /**
    * Logout
    */
   const logout = async () => {
@@ -177,6 +203,7 @@ export function AuthProvider({ children }) {
     login,
     signupIndividual,
     signupOrganization,
+    changePassword,
     logout,
     checkAuth,
     isAuthenticated: Boolean(user),

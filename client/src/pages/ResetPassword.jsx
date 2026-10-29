@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { Lock, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, Leaf } from 'lucide-react';
+import { Lock, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, Leaf, ArrowRight } from 'lucide-react';
+import { supabase } from '../supabase';
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -11,8 +12,52 @@ export default function ResetPassword() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(!token ? 'Missing password reset token in URL.' : null);
+  const [isRecoveryFlow, setIsRecoveryFlow] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState(null);
+  const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    // 1. Listen for Supabase PASSWORD_RECOVERY event
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsRecoveryFlow(true);
+        setError(null);
+        if (session?.user?.email) {
+          setRecoveryEmail(session.user.email);
+        }
+      }
+    });
+
+    // 2. Check if URL hash has Supabase recovery parameters
+    if (
+      window.location.hash.includes('type=recovery') ||
+      window.location.hash.includes('access_token') ||
+      searchParams.get('code')
+    ) {
+      setIsRecoveryFlow(true);
+      setError(null);
+    }
+
+    // 3. Fallback check: if neither token param nor recovery flow is present
+    if (!token && !window.location.hash.includes('access_token') && !searchParams.get('code')) {
+      // Check if there is already an active session from recovery
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          setIsRecoveryFlow(true);
+          setRecoveryEmail(session.user?.email || null);
+        } else {
+          setError('Missing or expired password reset link. Please request a new link.');
+        }
+      });
+    }
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, [token, searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,21 +75,61 @@ export default function ResetPassword() {
 
     try {
       setLoading(true);
-      const res = await fetch('/api/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, newPassword: password }),
-      });
+      let supabaseUpdated = false;
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to reset password');
+      // 1. Update password using Supabase client
+      try {
+        const { data: sbData, error: sbError } = await supabase.auth.updateUser({
+          password: password,
+        });
+
+        if (!sbError && sbData?.user) {
+          supabaseUpdated = true;
+          const userEmail = sbData.user.email || recoveryEmail;
+          if (userEmail) {
+            // Sync password hash with backend users table
+            await fetch('/api/auth/sync-password', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: userEmail, newPassword: password }),
+            });
+          }
+        } else if (sbError) {
+          console.warn('[Supabase updateUser warning]:', sbError.message);
+        }
+      } catch (sbErr) {
+        console.warn('[Supabase updateUser exception]:', sbErr);
+      }
+
+      // 2. If token is provided from server email link, call server reset endpoint
+      if (token) {
+        const res = await fetch('/api/auth/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, newPassword: password }),
+        });
+
+        if (!res.ok && !supabaseUpdated) {
+          const data = await res.json();
+          throw new Error(data.error || 'Failed to reset password');
+        }
+      } else if (!supabaseUpdated) {
+        // If neither Supabase nor token succeeded, attempt to sync if recovery email is known
+        if (recoveryEmail) {
+          await fetch('/api/auth/sync-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: recoveryEmail, newPassword: password }),
+          });
+        }
+      }
 
       setSuccess(true);
       setTimeout(() => {
         navigate('/login', { replace: true });
-      }, 2500);
+      }, 2200);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Failed to reset password');
     } finally {
       setLoading(false);
     }
@@ -74,7 +159,7 @@ export default function ResetPassword() {
               </div>
               <h2 className="text-lg font-bold text-white">Password Updated!</h2>
               <p className="text-xs text-slate-300">
-                Your password has been reset successfully. Redirecting you to login...
+                Your password has been reset successfully. Redirecting you to sign in...
               </p>
             </div>
           ) : (
@@ -102,9 +187,9 @@ export default function ResetPassword() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200"
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white transition cursor-pointer"
                   >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
@@ -125,11 +210,30 @@ export default function ResetPassword() {
 
               <button
                 type="submit"
-                disabled={loading || !token}
-                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-sm shadow-lg shadow-emerald-500/20 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                disabled={loading}
+                className="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>Update Password</span>}
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Updating Password...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Reset Password</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
+
+              <div className="pt-4 text-center border-t border-slate-800/80">
+                <Link
+                  to="/login"
+                  className="text-xs text-slate-400 hover:text-emerald-400 transition"
+                >
+                  Return to Sign In
+                </Link>
+              </div>
             </form>
           )}
         </div>

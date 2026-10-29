@@ -81,32 +81,38 @@ export default function OrganizationLogin() {
             </div>
           )}
 
-          <form className="space-y-5" onSubmit={handleSubmit}>
-            {/* Registered Login Email */}
+          {/* Hidden dummy fields — trick browsers into targeting these instead of the real inputs */}
+          <input type="text" name="username" style={{display:'none'}} autoComplete="username" readOnly />
+          <input type="password" name="password" style={{display:'none'}} autoComplete="current-password" readOnly />
+
+          <form className="space-y-5" onSubmit={handleSubmit} autoComplete="off">
+            {/* Username / Email */}
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                Registered Login Email
+                Username / Email
               </label>
               <div className="relative rounded-xl shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <Mail className="h-5 w-5" />
                 </div>
                 <input
-                  type="email"
+                  type="text"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@organization.org"
+                  placeholder="Enter your username/email"
+                  autoComplete="off"
+                  name="terra-org-email"
                   className="block w-full pl-11 pr-4 py-3 bg-slate-950/70 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm transition"
                 />
               </div>
             </div>
 
-            {/* Login Password */}
+            {/* Password */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                  Login Password
+                  Password
                 </label>
                 <Link
                   to="/forgot-password"
@@ -124,7 +130,9 @@ export default function OrganizationLogin() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
+                  placeholder="Enter your password"
+                  autoComplete="new-password"
+                  name="terra-org-password"
                   className="block w-full pl-11 pr-11 py-3 bg-slate-950/70 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm transition"
                 />
                 <button

@@ -73,22 +73,28 @@ export default function Login() {
             </div>
           )}
 
-          <form className="space-y-5" onSubmit={handleSubmit}>
-            {/* Email Field */}
+          {/* Hidden dummy fields — trick browsers into targeting these instead of the real inputs */}
+          <input type="text" name="username" style={{display:'none'}} autoComplete="username" readOnly />
+          <input type="password" name="password" style={{display:'none'}} autoComplete="current-password" readOnly />
+
+          <form className="space-y-5" onSubmit={handleSubmit} autoComplete="off">
+            {/* Username / Email Field */}
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                Email Address
+                Username / Email
               </label>
               <div className="relative rounded-xl shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <Mail className="h-5 w-5" />
                 </div>
                 <input
-                  type="email"
+                  type="text"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@domain.com"
+                  placeholder="Enter your username/email"
+                  autoComplete="off"
+                  name="terra-login-email"
                   className="block w-full pl-11 pr-4 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm transition"
                 />
               </div>
@@ -104,7 +110,7 @@ export default function Login() {
                   to="/forgot-password"
                   className="text-xs font-medium text-emerald-400 hover:text-emerald-300 transition"
                 >
-                  Forgot password?
+                  Forgot password? / Reset password
                 </Link>
               </div>
               <div className="relative rounded-xl shadow-sm">
@@ -116,7 +122,9 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="Enter your password"
+                  autoComplete="new-password"
+                  name="terra-login-password"
                   className="block w-full pl-11 pr-11 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm transition"
                 />
                 <button
