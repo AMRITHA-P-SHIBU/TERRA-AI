@@ -79,21 +79,21 @@ function ModuleShell({ activeTab, children }) {
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col font-sans text-slate-100">
+    <div className="min-h-screen bg-white flex flex-col font-sans text-slate-800">
       <Navbar
         activeTab={activeTab}
         currentUser={currentUser}
         connectionStatus={connectionStatus}
       />
       <main className="flex-1 pb-16">{children}</main>
-      <footer className="bg-slate-900 border-t border-slate-800 py-6 text-center text-xs text-slate-400">
+      <footer className="bg-emerald-50 border-t border-emerald-100 py-6 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p>© 2026 Terra AI • Sustainable Living & Environmental Intelligence</p>
           <div className="flex items-center gap-4 text-xs font-medium">
-            <a href="/" className="hover:text-emerald-400">Home</a>
-            <a href="/login" className="hover:text-emerald-400">Sign In</a>
-            <a href="/signup" className="hover:text-emerald-400">Register</a>
-            <a href="/admin/login" className="hover:text-cyan-400">Admin Portal</a>
+            <a href="/" className="hover:text-emerald-700">Home</a>
+            <a href="/login" className="hover:text-emerald-700">Sign In</a>
+            <a href="/signup" className="hover:text-emerald-700">Register</a>
+            <a href="/admin/login" className="hover:text-teal-700">Admin Portal</a>
           </div>
         </div>
       </footer>

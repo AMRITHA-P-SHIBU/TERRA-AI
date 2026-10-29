@@ -42,11 +42,12 @@ export default function VerifyEmail() {
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10 px-4">
-        <Link to="/" className="inline-flex items-center gap-2.5 group mb-4">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center group-hover:scale-105 transition shadow-lg shadow-emerald-500/10">
-            <Leaf className="w-6 h-6 text-emerald-400" />
-          </div>
-          <span className="text-2xl font-black tracking-tight text-white">TERRA <span className="text-emerald-400">AI</span></span>
+        <Link to="/" className="inline-flex items-center group mb-4">
+          <img 
+            src="/terra-ai-logo.svg" 
+            alt="TERRA AI Logo" 
+            className="h-12 w-auto object-contain transition-transform group-hover:scale-105" 
+          />
         </Link>
         <h1 className="text-2xl font-extrabold text-white">Email Verification</h1>
       </div>

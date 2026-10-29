@@ -101,52 +101,52 @@ export default function OrganizationDashboard() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="min-h-screen bg-white text-slate-800 font-sans max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Organization Verified Header */}
-      <div className="relative rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900 to-cyan-950/70 border border-cyan-500/30 p-6 sm:p-10 shadow-2xl overflow-hidden">
-        <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="relative rounded-3xl bg-gradient-to-r from-teal-50 via-white to-cyan-50 border border-teal-200 p-6 sm:p-10 shadow-md overflow-hidden">
+        <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 w-96 h-96 bg-teal-100/40 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div className="flex items-start gap-4 sm:gap-5">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0 shadow-lg shadow-cyan-500/10">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700 shrink-0 shadow-sm">
               <Building2 className="w-8 h-8 sm:w-10 sm:h-10" />
             </div>
 
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200">
                   <ShieldCheck className="w-3.5 h-3.5" /> VERIFIED ORGANIZATION
                 </span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
                   {organization?.organization_type || 'Eco Organization'}
                 </span>
                 {organization?.registration_number && (
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-slate-500">
                     Reg: {organization.registration_number}
                   </span>
                 )}
               </div>
 
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#133e24] tracking-tight">
                 {organization?.name || 'Organization Admin Center'}
               </h1>
 
-              <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-slate-400">
+              <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-slate-500">
                 {organization?.official_email && (
                   <div className="flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 text-cyan-400" />
+                    <Mail className="w-3.5 h-3.5 text-teal-700" />
                     <span>{organization.official_email}</span>
                   </div>
                 )}
                 {organization?.contact_number && (
                   <div className="flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-cyan-400" />
+                    <Phone className="w-3.5 h-3.5 text-teal-700" />
                     <span>{organization.contact_number}</span>
                   </div>
                 )}
                 {organization?.address && (
                   <div className="flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+                    <MapPin className="w-3.5 h-3.5 text-teal-700" />
                     <span>{organization.address}</span>
                   </div>
                 )}
@@ -155,7 +155,7 @@ export default function OrganizationDashboard() {
                     href={organization.website}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-1.5 text-cyan-400 hover:underline"
+                    className="flex items-center gap-1.5 text-teal-700 hover:underline"
                   >
                     <Globe className="w-3.5 h-3.5" />
                     <span>{organization.website}</span>
@@ -169,7 +169,7 @@ export default function OrganizationDashboard() {
           <div className="shrink-0 flex items-center gap-3">
             <button
               onClick={() => setInviteModalOpen(true)}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-cyan-500/20 flex items-center gap-2 cursor-pointer transition"
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white font-bold text-xs sm:text-sm shadow-sm flex items-center gap-2 cursor-pointer transition"
             >
               <UserPlus className="w-4 h-4" />
               <span>Invite Team Member</span>
@@ -179,41 +179,41 @@ export default function OrganizationDashboard() {
       </div>
 
       {/* Organization Security & Data Isolation Notice */}
-      <div className="p-4 rounded-2xl bg-cyan-950/30 border border-cyan-500/20 flex items-center justify-between text-xs text-slate-300">
+      <div className="p-4 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-between text-xs text-slate-600">
         <div className="flex items-center gap-2.5">
-          <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0" />
+          <ShieldCheck className="w-4 h-4 text-teal-700 shrink-0" />
           <span>
             <strong>Org-Level Data Isolation:</strong> All member listings and actions are scoped to{' '}
-            <strong className="text-white">{organization?.name}</strong> based on your verified membership ID.
+            <strong className="text-[#133e24]">{organization?.name}</strong> based on your verified membership ID.
           </span>
         </div>
-        <span className="hidden sm:inline-block px-2.5 py-0.5 rounded bg-cyan-500/10 text-cyan-300 text-[11px] font-mono">
+        <span className="hidden sm:inline-block px-2.5 py-0.5 rounded bg-teal-100 text-teal-700 text-[11px] font-mono border border-teal-200">
           Role: {membership?.role || 'ORG_ADMIN'}
         </span>
       </div>
 
       {/* Member Management Section */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 mb-6 border-b border-slate-800 gap-4">
+      <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 mb-6 border-b border-slate-200 gap-4">
           <div>
             <div className="flex items-center gap-2.5">
-              <Users className="w-5 h-5 text-cyan-400" />
-              <h2 className="text-lg font-bold text-white tracking-tight">
+              <Users className="w-5 h-5 text-teal-700" />
+              <h2 className="text-lg font-bold text-[#133e24] tracking-tight">
                 Organization Members & Roles
               </h2>
             </div>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-500 mt-1">
               Supports multiple administrators and collaboration roles within your organization.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-400">
-              Total Members: <strong className="text-white font-semibold">{members.length}</strong>
+            <span className="text-xs text-slate-500">
+              Total Members: <strong className="text-slate-800 font-semibold">{members.length}</strong>
             </span>
             <button
               onClick={() => setInviteModalOpen(true)}
-              className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-cyan-400 text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition cursor-pointer"
+              className="px-3.5 py-1.5 rounded-xl bg-slate-50 hover:bg-teal-50 text-teal-700 text-xs font-semibold flex items-center gap-1.5 border border-slate-200 transition cursor-pointer"
             >
               <UserPlus className="w-3.5 h-3.5" />
               <span>Invite</span>
@@ -223,26 +223,26 @@ export default function OrganizationDashboard() {
 
         {/* Member Table */}
         {loadingMembers ? (
-          <div className="py-12 flex flex-col items-center justify-center text-slate-400">
-            <Loader2 className="w-8 h-8 text-cyan-400 animate-spin mb-3" />
+          <div className="py-12 flex flex-col items-center justify-center text-slate-500">
+            <Loader2 className="w-8 h-8 text-teal-600 animate-spin mb-3" />
             <p className="text-sm">Loading organization member roster...</p>
           </div>
         ) : membersError ? (
-          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm flex items-center gap-3">
+          <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm flex items-center gap-3">
             <AlertCircle className="w-5 h-5 shrink-0" />
             <span>{membersError}</span>
           </div>
         ) : members.length === 0 ? (
-          <div className="text-center py-12 text-slate-400">
+          <div className="text-center py-12 text-slate-500">
             <Users className="w-10 h-10 mx-auto text-slate-400 mb-2" />
-            <p className="text-sm font-semibold text-slate-300">No additional members found</p>
-            <p className="text-xs text-slate-400 mt-1">Click "Invite Team Member" above to add colleagues.</p>
+            <p className="text-sm font-semibold text-slate-600">No additional members found</p>
+            <p className="text-xs text-slate-500 mt-1">Click "Invite Team Member" above to add colleagues.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs sm:text-sm">
               <thead>
-                <tr className="border-b border-slate-800 text-slate-400 text-[11px] uppercase tracking-wider">
+                <tr className="border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider">
                   <th className="py-3 px-4 font-semibold">Member</th>
                   <th className="py-3 px-4 font-semibold">Email</th>
                   <th className="py-3 px-4 font-semibold">Organization Role</th>
@@ -250,29 +250,29 @@ export default function OrganizationDashboard() {
                   <th className="py-3 px-4 font-semibold">Joined Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 text-slate-300">
+              <tbody className="divide-y divide-slate-100 text-slate-600">
                 {members.map((member) => (
-                  <tr key={member.id} className="hover:bg-slate-850/50 transition">
-                    <td className="py-3.5 px-4 font-medium text-white flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-cyan-400">
+                  <tr key={member.id} className="hover:bg-teal-50/50 transition">
+                    <td className="py-3.5 px-4 font-medium text-slate-800 flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-full bg-teal-50 border border-teal-200 flex items-center justify-center text-xs font-bold text-teal-700">
                         {member.full_name ? member.full_name[0] : 'U'}
                       </div>
                       <span>{member.full_name}</span>
                       {member.user_id === user?.id && (
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-semibold">
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">
                           You
                         </span>
                       )}
                     </td>
-                    <td className="py-3.5 px-4 text-slate-300 font-mono text-xs">
+                    <td className="py-3.5 px-4 text-slate-600 font-mono text-xs">
                       {member.email}
                     </td>
                     <td className="py-3.5 px-4">
                       <span
                         className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                           member.role === 'ORG_ADMIN'
-                            ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
-                            : 'bg-slate-800 text-slate-300'
+                            ? 'bg-teal-50 text-teal-700 border border-teal-200'
+                            : 'bg-slate-100 text-slate-600 border border-slate-200'
                         }`}
                       >
                         {member.role === 'ORG_ADMIN' ? 'Admin' : 'Member'}
@@ -282,17 +282,17 @@ export default function OrganizationDashboard() {
                       <span
                         className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           member.status === 'ACTIVE'
-                            ? 'bg-emerald-500/10 text-emerald-400'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                             : member.status === 'INVITED'
-                            ? 'bg-amber-500/10 text-amber-400'
-                            : 'bg-rose-500/10 text-rose-400'
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                            : 'bg-rose-50 text-rose-700 border border-rose-200'
                         }`}
                       >
                         <span className="w-1.5 h-1.5 rounded-full bg-current" />
                         {member.status}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 text-slate-400 text-xs">
+                    <td className="py-3.5 px-4 text-slate-500 text-xs">
                       {member.joined_at ? new Date(member.joined_at).toLocaleDateString() : '—'}
                     </td>
                   </tr>
@@ -305,42 +305,42 @@ export default function OrganizationDashboard() {
 
       {/* Invite Member Modal */}
       {inviteModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-cyan-500/30 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative animate-scaleUp">
+        <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-teal-200 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-md relative animate-scaleUp">
             <button
               onClick={() => setInviteModalOpen(false)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg"
+              className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 p-1 rounded-lg"
             >
               <X className="w-5 h-5" />
             </button>
 
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200">
                 <UserPlus className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">Invite Colleague</h3>
-                <p className="text-xs text-slate-400">Add a member to {organization?.name}</p>
+                <h3 className="text-lg font-bold text-[#133e24]">Invite Colleague</h3>
+                <p className="text-xs text-slate-500">Add a member to {organization?.name}</p>
               </div>
             </div>
 
             {inviteSuccess && (
-              <div className="mb-4 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+              <div className="mb-4 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
                 <span>{inviteSuccess}</span>
               </div>
             )}
 
             {inviteError && (
-              <div className="mb-4 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+              <div className="mb-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
                 <span>{inviteError}</span>
               </div>
             )}
 
             <form onSubmit={handleInviteSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                   Email Address *
                 </label>
                 <input
@@ -349,23 +349,23 @@ export default function OrganizationDashboard() {
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   placeholder="colleague@domain.com"
-                  className="block w-full px-4 py-2.5 bg-slate-950/70 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-slate-400"
+                  className="block w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 placeholder-slate-400"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                   Membership Role
                 </label>
                 <select
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value)}
-                  className="block w-full px-4 py-2.5 bg-slate-950/70 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="block w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <option value="MEMBER">Standard Member (View & Collaborate)</option>
                   <option value="ORG_ADMIN">Organization Admin (Manage Members & Settings)</option>
                 </select>
-                <p className="text-[11px] text-slate-400 mt-1">
+                <p className="text-[11px] text-slate-500 mt-1">
                   You can grant Organization Admin permissions to multiple leaders.
                 </p>
               </div>
@@ -374,14 +374,14 @@ export default function OrganizationDashboard() {
                 <button
                   type="button"
                   onClick={() => setInviteModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-800"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={inviteLoading}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs shadow-md shadow-cyan-500/20 flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white font-bold text-xs shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {inviteLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

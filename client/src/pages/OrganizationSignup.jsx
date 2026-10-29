@@ -151,35 +151,36 @@ export default function OrganizationSignup() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-screen bg-white flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Background Glow */}
-      <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-teal-50 rounded-full blur-[140px] pointer-events-none" />
 
       {/* Header */}
       <div className="sm:mx-auto sm:w-full sm:max-w-2xl text-center relative z-10 px-4">
-        <Link to="/" className="inline-flex items-center gap-2.5 group mb-4">
-          <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center group-hover:scale-105 transition shadow-lg shadow-cyan-500/10">
-            <Building2 className="w-6 h-6 text-cyan-400" />
-          </div>
-          <span className="text-2xl font-black tracking-tight text-white">TERRA <span className="text-cyan-400">AI</span></span>
+        <Link to="/" className="inline-flex items-center group mb-4">
+          <img 
+            src="/terra-ai-logo.svg" 
+            alt="TERRA AI Logo" 
+            className="h-12 w-auto object-contain transition-transform group-hover:scale-105" 
+          />
         </Link>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight">
           Register Your Organization
         </h1>
-        <p className="mt-2 text-sm text-slate-400">
+        <p className="mt-2 text-sm text-slate-500">
           Join our verified network of green enterprises, non-profits, and educational bodies
         </p>
       </div>
 
       {/* Main Container */}
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-2xl relative z-10 px-4">
-        <div className="bg-slate-900/90 backdrop-blur-xl py-8 px-6 sm:px-10 shadow-2xl rounded-3xl border border-slate-800">
+        <div className="bg-white backdrop-blur-xl py-8 px-6 sm:px-10 shadow-2xl rounded-3xl border border-slate-200">
           {/* Success Banner */}
           {successNotice && (
             <div className="mb-6 p-5 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 flex items-start gap-3.5 animate-fadeIn">
               <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0 mt-0.5" />
               <div>
-                <h4 className="font-bold text-base text-white">Registration Submitted!</h4>
+                <h4 className="font-bold text-base text-slate-800">Registration Submitted!</h4>
                 <p className="text-sm mt-1 text-emerald-200 font-medium">
                   Your organization registration request is pending admin approval. Redirecting to status tracker...
                 </p>
@@ -198,9 +199,9 @@ export default function OrganizationSignup() {
           <form className="space-y-6" onSubmit={handleSubmit}>
             {/* Section 1: Organization Details */}
             <div>
-              <div className="flex items-center gap-2 pb-2 mb-4 border-b border-slate-800">
-                <Building2 className="w-4 h-4 text-cyan-400" />
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+              <div className="flex items-center gap-2 pb-2 mb-4 border-b border-slate-200">
+                <Building2 className="w-4 h-4 text-teal-700" />
+                <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
                   Organization Details
                 </h2>
               </div>
@@ -208,7 +209,7 @@ export default function OrganizationSignup() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Org Name */}
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                     Organization Name *
                   </label>
                   <input
@@ -218,23 +219,23 @@ export default function OrganizationSignup() {
                     value={formData.name}
                     onChange={handleChange}
                     placeholder="e.g. EcoSphere Foundation or CleanEarth Corp"
-                    className="block w-full px-4 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm transition"
+                    className="block w-full px-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm transition"
                   />
                 </div>
 
                 {/* Org Type */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                     Organization Type *
                   </label>
                   <select
                     name="organization_type"
                     value={formData.organization_type}
                     onChange={handleChange}
-                    className="block w-full px-4 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                    className="block w-full px-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
                   >
                     {orgTypes.map((type) => (
-                      <option key={type} value={type} className="bg-slate-900 text-white">
+                      <option key={type} value={type} className="bg-slate-900 text-slate-800">
                         {type}
                       </option>
                     ))}
@@ -243,8 +244,8 @@ export default function OrganizationSignup() {
 
                 {/* Registration Number (Optional) */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                    Registration / Tax Number <span className="text-slate-400 font-normal">(Optional)</span>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Registration / Tax Number <span className="text-slate-500 font-normal">(Optional)</span>
                   </label>
                   <input
                     type="text"
@@ -252,17 +253,17 @@ export default function OrganizationSignup() {
                     value={formData.registration_number}
                     onChange={handleChange}
                     placeholder="e.g. REG-8849204"
-                    className="block w-full px-4 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm transition"
+                    className="block w-full px-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm transition"
                   />
                 </div>
 
                 {/* Official Email */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                     Official Email *
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                       <Mail className="h-4 w-4" />
                     </div>
                     <input
@@ -272,18 +273,18 @@ export default function OrganizationSignup() {
                       value={formData.official_email}
                       onChange={handleChange}
                       placeholder="info@org.org"
-                      className="block w-full pl-10 pr-4 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm transition"
+                      className="block w-full pl-10 pr-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm transition"
                     />
                   </div>
                 </div>
 
                 {/* Contact Number */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                     Official Contact Number *
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                       <Phone className="h-4 w-4" />
                     </div>
                     <input
@@ -293,18 +294,18 @@ export default function OrganizationSignup() {
                       value={formData.contact_number}
                       onChange={handleChange}
                       placeholder="+1 (555) 000-1234"
-                      className="block w-full pl-10 pr-4 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm transition"
+                      className="block w-full pl-10 pr-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm transition"
                     />
                   </div>
                 </div>
 
                 {/* Address */}
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                     Address / Physical HQ Location *
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                       <MapPin className="h-4 w-4" />
                     </div>
                     <input
@@ -314,18 +315,18 @@ export default function OrganizationSignup() {
                       value={formData.address}
                       onChange={handleChange}
                       placeholder="Suite 400, Green Plaza, City, Country"
-                      className="block w-full pl-10 pr-4 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm transition"
+                      className="block w-full pl-10 pr-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm transition"
                     />
                   </div>
                 </div>
 
                 {/* Website (Optional) */}
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                    Website URL <span className="text-slate-400 font-normal">(Optional)</span>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Website URL <span className="text-slate-500 font-normal">(Optional)</span>
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                       <Globe className="h-4 w-4" />
                     </div>
                     <input
@@ -334,23 +335,23 @@ export default function OrganizationSignup() {
                       value={formData.website}
                       onChange={handleChange}
                       placeholder="https://your-organization.org"
-                      className="block w-full pl-10 pr-4 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm transition"
+                      className="block w-full pl-10 pr-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm transition"
                     />
                   </div>
                 </div>
 
                 {/* Verification Document Upload */}
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                     Official Verification Document (Certificate, Tax Exempt, License)
                   </label>
-                  <div className="border-2 border-dashed border-slate-800 hover:border-cyan-500/50 rounded-2xl p-4 text-center bg-slate-950/40 transition">
+                  <div className="border-2 border-dashed border-slate-200 hover:border-cyan-500/50 rounded-2xl p-4 text-center bg-white/40 transition">
                     {documentFile ? (
-                      <div className="flex items-center justify-between p-3 bg-cyan-950/40 border border-cyan-500/30 rounded-xl">
+                      <div className="flex items-center justify-between p-3 bg-cyan-950/40 border border-teal-200 rounded-xl">
                         <div className="flex items-center gap-3 text-left overflow-hidden">
-                          <FileText className="w-8 h-8 text-cyan-400 shrink-0" />
+                          <FileText className="w-8 h-8 text-teal-700 shrink-0" />
                           <div className="truncate">
-                            <p className="text-xs font-semibold text-white truncate">{documentFile.name}</p>
+                            <p className="text-xs font-semibold text-slate-800 truncate">{documentFile.name}</p>
                             <p className="text-[11px] text-cyan-300">
                               {(documentFile.size / 1024 / 1024).toFixed(2)} MB
                             </p>
@@ -359,18 +360,18 @@ export default function OrganizationSignup() {
                         <button
                           type="button"
                           onClick={() => setDocumentFile(null)}
-                          className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white"
+                          className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-500 hover:text-slate-800"
                         >
                           <X className="w-4 h-4" />
                         </button>
                       </div>
                     ) : (
                       <label className="cursor-pointer flex flex-col items-center">
-                        <Upload className="w-8 h-8 text-cyan-400 mb-2" />
+                        <Upload className="w-8 h-8 text-teal-700 mb-2" />
                         <span className="text-xs font-semibold text-slate-200">
                           Click or drag verification document here
                         </span>
-                        <span className="text-[11px] text-slate-400 mt-1">
+                        <span className="text-[11px] text-slate-500 mt-1">
                           PDF, PNG, JPG, or WEBP up to 5 MB
                         </span>
                         <input
@@ -382,7 +383,7 @@ export default function OrganizationSignup() {
                       </label>
                     )}
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1.5">
+                  <p className="text-[11px] text-slate-500 mt-1.5">
                     Uploaded documents are securely stored in private storage and accessible only by Terra AI Super Admins.
                   </p>
                 </div>
@@ -391,9 +392,9 @@ export default function OrganizationSignup() {
 
             {/* Section 2: Representative Account */}
             <div className="pt-4">
-              <div className="flex items-center gap-2 pb-2 mb-4 border-b border-slate-800">
+              <div className="flex items-center gap-2 pb-2 mb-4 border-b border-slate-200">
                 <User className="w-4 h-4 text-emerald-400" />
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
                   Organization Representative / Admin Account
                 </h2>
               </div>
@@ -401,7 +402,7 @@ export default function OrganizationSignup() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Rep Name */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                     Representative Full Name *
                   </label>
                   <input
@@ -411,13 +412,13 @@ export default function OrganizationSignup() {
                     value={formData.representative_name}
                     onChange={handleChange}
                     placeholder="Dr. Alex Rivera"
-                    className="block w-full px-4 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm transition"
+                    className="block w-full px-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm transition"
                   />
                 </div>
 
                 {/* Rep Email */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                     Representative Login Email *
                   </label>
                   <input
@@ -427,13 +428,13 @@ export default function OrganizationSignup() {
                     value={formData.representative_email}
                     onChange={handleChange}
                     placeholder="alex@org.org"
-                    className="block w-full px-4 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm transition"
+                    className="block w-full px-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm transition"
                   />
                 </div>
 
                 {/* Rep Password */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                     Login Password *
                   </label>
                   <div className="relative">
@@ -444,12 +445,12 @@ export default function OrganizationSignup() {
                       value={formData.representative_password}
                       onChange={handleChange}
                       placeholder="••••••••"
-                      className="block w-full pl-4 pr-11 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm transition"
+                      className="block w-full pl-4 pr-11 py-3 bg-white/60 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm transition"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200"
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-200"
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -458,7 +459,7 @@ export default function OrganizationSignup() {
 
                 {/* Rep Confirm Password */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                     Confirm Password *
                   </label>
                   <input
@@ -468,7 +469,7 @@ export default function OrganizationSignup() {
                     value={formData.confirm_password}
                     onChange={handleChange}
                     placeholder="••••••••"
-                    className="block w-full px-4 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm transition"
+                    className="block w-full px-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm transition"
                   />
                 </div>
               </div>
@@ -482,11 +483,11 @@ export default function OrganizationSignup() {
                   name="acceptTerms"
                   checked={formData.acceptTerms}
                   onChange={handleChange}
-                  className="mt-0.5 w-4 h-4 rounded bg-slate-950 border-slate-700 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-slate-900"
+                  className="mt-0.5 w-4 h-4 rounded bg-white border-slate-700 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-slate-900"
                 />
-                <span className="text-xs text-slate-400 leading-relaxed">
+                <span className="text-xs text-slate-500 leading-relaxed">
                   I certify that I am an authorized representative of this organization and agree to the{' '}
-                  <span className="text-cyan-400 underline">Terra AI Partner Agreement</span> and verification review.
+                  <span className="text-teal-700 underline">Terra AI Partner Agreement</span> and verification review.
                 </span>
               </label>
             </div>
@@ -495,7 +496,7 @@ export default function OrganizationSignup() {
             <button
               type="submit"
               disabled={loading || successNotice}
-              className="w-full mt-4 py-3.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-sm shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full mt-4 py-3.5 px-4 rounded-xl bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-sm shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -512,14 +513,14 @@ export default function OrganizationSignup() {
           </form>
 
           {/* Footer */}
-          <div className="mt-6 pt-5 border-t border-slate-800 text-center space-y-2">
-            <p className="text-xs text-slate-400">
+          <div className="mt-6 pt-5 border-t border-slate-200 text-center space-y-2">
+            <p className="text-xs text-slate-500">
               Already an organization admin?{' '}
-              <Link to="/login/organization" className="text-cyan-400 hover:text-cyan-300 font-semibold underline underline-offset-4">
+              <Link to="/login/organization" className="text-teal-700 hover:text-cyan-300 font-semibold underline underline-offset-4">
                 sign in.
               </Link>
             </p>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               Want to join as an individual citizen instead?{' '}
               <Link to="/signup/individual" className="text-emerald-400 hover:text-emerald-300 font-semibold underline underline-offset-4">
                 Individual Signup

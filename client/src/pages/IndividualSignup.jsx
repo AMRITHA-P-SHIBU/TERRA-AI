@@ -78,29 +78,30 @@ export default function IndividualSignup() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-screen bg-white flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Background Glows */}
-      <div className="absolute top-1/4 left-1/3 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 left-1/3 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-50 rounded-full blur-3xl pointer-events-none" />
 
       {/* Header */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10">
-        <Link to="/" className="inline-flex items-center gap-2.5 group mb-4">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center group-hover:scale-105 transition shadow-lg shadow-emerald-500/10">
-            <Leaf className="w-6 h-6 text-emerald-400" />
-          </div>
-          <span className="text-2xl font-black tracking-tight text-white">TERRA <span className="text-emerald-400">AI</span></span>
+        <Link to="/" className="inline-flex items-center group mb-4">
+          <img 
+            src="/terra-ai-logo.svg" 
+            alt="TERRA AI Logo" 
+            className="h-12 w-auto object-contain transition-transform group-hover:scale-105" 
+          />
         </Link>
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight">
           Create Individual Account
         </h2>
-        <p className="mt-2 text-sm text-slate-400">
+        <p className="mt-2 text-sm text-slate-500">
           Immediate access to GreenFeed, Eco Exchange, and Carbon Tracking
         </p>
       </div>
 
       {/* Main Card */}
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-lg relative z-10 px-4">
-        <div className="bg-slate-900/90 backdrop-blur-xl py-8 px-6 sm:px-10 shadow-2xl rounded-3xl border border-slate-800">
+        <div className="bg-white backdrop-blur-xl py-8 px-6 sm:px-10 shadow-2xl rounded-3xl border border-slate-200">
           {error && (
             <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-3 text-rose-300 text-sm animate-shake">
               <AlertCircle className="w-5 h-5 shrink-0 text-rose-400 mt-0.5" />
@@ -111,11 +112,11 @@ export default function IndividualSignup() {
           <form className="space-y-4" onSubmit={handleSubmit}>
             {/* Full Name */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 Full Name *
               </label>
               <div className="relative rounded-xl shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                   <User className="h-5 w-5" />
                 </div>
                 <input
@@ -125,18 +126,18 @@ export default function IndividualSignup() {
                   value={formData.full_name}
                   onChange={handleChange}
                   placeholder="Jane Green"
-                  className="block w-full pl-11 pr-4 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm transition"
+                  className="block w-full pl-11 pr-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm transition"
                 />
               </div>
             </div>
 
             {/* Email */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 Email Address *
               </label>
               <div className="relative rounded-xl shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                   <Mail className="h-5 w-5" />
                 </div>
                 <input
@@ -146,18 +147,18 @@ export default function IndividualSignup() {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="jane@example.com"
-                  className="block w-full pl-11 pr-4 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm transition"
+                  className="block w-full pl-11 pr-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm transition"
                 />
               </div>
             </div>
 
             {/* Password */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 Password * (min 8 characters, 1 uppercase, 1 number)
               </label>
               <div className="relative rounded-xl shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                   <Lock className="h-5 w-5" />
                 </div>
                 <input
@@ -167,12 +168,12 @@ export default function IndividualSignup() {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="••••••••"
-                  className="block w-full pl-11 pr-11 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm transition"
+                  className="block w-full pl-11 pr-11 py-3 bg-white/60 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm transition"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200 transition"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-200 transition"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -181,11 +182,11 @@ export default function IndividualSignup() {
 
             {/* Confirm Password */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 Confirm Password *
               </label>
               <div className="relative rounded-xl shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                   <Lock className="h-5 w-5" />
                 </div>
                 <input
@@ -195,18 +196,18 @@ export default function IndividualSignup() {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="••••••••"
-                  className="block w-full pl-11 pr-4 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm transition"
+                  className="block w-full pl-11 pr-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm transition"
                 />
               </div>
             </div>
 
             {/* Optional Location */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 City / Location (Optional)
               </label>
               <div className="relative rounded-xl shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                   <MapPin className="h-5 w-5" />
                 </div>
                 <input
@@ -215,7 +216,7 @@ export default function IndividualSignup() {
                   value={formData.location}
                   onChange={handleChange}
                   placeholder="e.g. Seattle, WA or Mumbai, India"
-                  className="block w-full pl-11 pr-4 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm transition"
+                  className="block w-full pl-11 pr-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm transition"
                 />
               </div>
             </div>
@@ -228,12 +229,12 @@ export default function IndividualSignup() {
                   name="acceptTerms"
                   checked={formData.acceptTerms}
                   onChange={handleChange}
-                  className="mt-0.5 w-4 h-4 rounded bg-slate-950 border-slate-700 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-900"
+                  className="mt-0.5 w-4 h-4 rounded bg-white border-slate-700 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-900"
                 />
-                <span className="text-xs text-slate-400 leading-relaxed">
+                <span className="text-xs text-slate-500 leading-relaxed">
                   I accept the{' '}
-                  <span className="text-emerald-400 underline">Terms of Service</span> and{' '}
-                  <span className="text-emerald-400 underline">Community Guidelines</span> for sustainable living.
+                  <span className="text-emerald-700 underline">Terms of Service</span> and{' '}
+                  <span className="text-emerald-700 underline">Community Guidelines</span> for sustainable living.
                 </span>
               </label>
             </div>
@@ -242,7 +243,7 @@ export default function IndividualSignup() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-4 py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-sm shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full mt-4 py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-700 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -259,7 +260,7 @@ export default function IndividualSignup() {
           </form>
 
           {/* Switch to Organization */}
-          <div className="mt-6 pt-5 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+          <div className="mt-6 pt-5 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
             <span>Representing a business or NGO?</span>
             <Link to="/signup/organization" className="text-cyan-400 hover:text-cyan-300 font-semibold">
               Organization Signup →
@@ -268,9 +269,9 @@ export default function IndividualSignup() {
         </div>
 
         <div className="mt-6 text-center">
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500">
             Already have an individual citizen account?{' '}
-            <Link to="/login" className="text-emerald-400 hover:text-emerald-300 font-semibold underline underline-offset-4">
+            <Link to="/login" className="text-emerald-700 hover:text-emerald-300 font-semibold underline underline-offset-4">
               Sign In
             </Link>
           </p>

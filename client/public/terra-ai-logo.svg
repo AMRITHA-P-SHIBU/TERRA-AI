@@ -54,7 +54,7 @@
   </defs>
 
   <!-- Clean White Background -->
-  <rect width="680" height="320" fill="#FFFFFF" />
+  
 
   <!-- ============ GLOBE (positioned above/behind the text, between TERRA and AI) ============ -->
   <g filter="url(#globeShadow)">

@@ -57,11 +57,12 @@ export default function OrganizationLogin() {
 
       {/* Header */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10">
-        <Link to="/" className="inline-flex items-center gap-2.5 group mb-4">
-          <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center group-hover:scale-105 transition shadow-lg shadow-cyan-500/10">
-            <Building2 className="w-6 h-6 text-cyan-400" />
-          </div>
-          <span className="text-2xl font-black tracking-tight text-white">TERRA <span className="text-cyan-400">AI</span></span>
+        <Link to="/" className="inline-flex items-center group mb-4">
+          <img 
+            src="/terra-ai-logo.svg" 
+            alt="TERRA AI Logo" 
+            className="h-12 w-auto object-contain transition-transform group-hover:scale-105" 
+          />
         </Link>
         <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
           Organization Sign In
