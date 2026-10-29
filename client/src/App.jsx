@@ -10,6 +10,7 @@ import Login from './pages/Login';
 import AdminLogin from './pages/AdminLogin';
 import IndividualSignup from './pages/IndividualSignup';
 import OrganizationSignup from './pages/OrganizationSignup';
+import OrganizationLogin from './pages/OrganizationLogin';
 import PendingApproval from './pages/PendingApproval';
 import IndividualDashboard from './pages/IndividualDashboard';
 import OrganizationDashboard from './pages/OrganizationDashboard';
@@ -116,6 +117,8 @@ export default function App() {
           <Route path="/signup/individual" element={<IndividualSignup />} />
           <Route path="/signup/organization" element={<OrganizationSignup />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/login/organization" element={<OrganizationLogin />} />
+          <Route path="/organization/login" element={<Navigate to="/login/organization" replace />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/pending-approval" element={<PendingApproval />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

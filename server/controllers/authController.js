@@ -45,6 +45,7 @@ const loginSchema = z.object({
   email: z.string().trim().email('Invalid email address').toLowerCase(),
   password: z.string().min(1, 'Password is required'),
   rememberMe: z.boolean().optional(),
+  expectedRole: z.enum(['INDIVIDUAL', 'ORG_ADMIN', 'SUPER_ADMIN']).optional(),
 });
 
 /**
@@ -75,9 +76,9 @@ export async function signupIndividual(req, res) {
     // Insert user
     const insertResult = await query(
       `INSERT INTO users (full_name, email, password_hash, account_type, status, email_verified)
-       VALUES ($1, $2, $3, 'INDIVIDUAL', 'ACTIVE', false)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id, full_name, email, account_type, status, email_verified, created_at`,
-      [full_name, email, password_hash]
+      [full_name, email, password_hash, 'INDIVIDUAL', 'ACTIVE', false]
     );
 
     const user = insertResult.rows[0];
@@ -117,7 +118,7 @@ export async function signupIndividual(req, res) {
     });
   } catch (error) {
     console.error('[signupIndividual Error]:', error);
-    return res.status(500).json({ error: 'Failed to create individual account' });
+    return res.status(500).json({ error: error.message || 'Failed to create individual account' });
   }
 }
 
@@ -275,6 +276,42 @@ export async function login(req, res) {
     const passwordMatch = await bcrypt.compare(password, userRecord.password_hash);
     if (!passwordMatch) {
       return res.status(401).json({ error: genericError });
+    }
+
+    // Role-based portal enforcement
+    const { expectedRole } = parseResult.data;
+    if (expectedRole && userRecord.account_type !== expectedRole) {
+      if (expectedRole === 'INDIVIDUAL') {
+        const targetPortal =
+          userRecord.account_type === 'SUPER_ADMIN'
+            ? 'Super Admin Console (/admin/login)'
+            : 'Organization Portal (/login/organization)';
+        return res.status(403).json({
+          error: `Access Denied: This login page is exclusively for Individual Citizens. Your account is registered as ${userRecord.account_type}. Please sign in via the ${targetPortal}.`,
+          code: 'ROLE_MISMATCH',
+          actualRole: userRecord.account_type,
+        });
+      }
+
+      if (expectedRole === 'ORG_ADMIN') {
+        const targetPortal =
+          userRecord.account_type === 'SUPER_ADMIN'
+            ? 'Super Admin Console (/admin/login)'
+            : 'Citizen Login (/login)';
+        return res.status(403).json({
+          error: `Access Denied: This login page is exclusively for Organization Administrators. Your account is registered as ${userRecord.account_type}. Please sign in via ${targetPortal}.`,
+          code: 'ROLE_MISMATCH',
+          actualRole: userRecord.account_type,
+        });
+      }
+
+      if (expectedRole === 'SUPER_ADMIN') {
+        return res.status(403).json({
+          error: 'Unauthorized: This portal is strictly restricted to Terra AI Platform Super Administrators.',
+          code: 'ROLE_MISMATCH',
+          actualRole: userRecord.account_type,
+        });
+      }
     }
 
     // Check account status

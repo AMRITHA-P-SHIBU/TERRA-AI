@@ -49,14 +49,19 @@ export function AuthProvider({ children }) {
   /**
    * Login method
    */
-  const login = async (email, password, rememberMe = false) => {
+  const login = async (email, password, rememberMe = false, expectedRole = null) => {
     setError(null);
     try {
+      const payload = { email, password, rememberMe };
+      if (expectedRole) {
+        payload.expectedRole = expectedRole;
+      }
+
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email, password, rememberMe }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();

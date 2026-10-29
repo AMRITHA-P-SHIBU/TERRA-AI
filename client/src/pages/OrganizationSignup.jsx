@@ -512,7 +512,13 @@ export default function OrganizationSignup() {
           </form>
 
           {/* Footer */}
-          <div className="mt-6 pt-5 border-t border-slate-800 text-center">
+          <div className="mt-6 pt-5 border-t border-slate-800 text-center space-y-2">
+            <p className="text-xs text-slate-400">
+              Already an organization admin?{' '}
+              <Link to="/login/organization" className="text-cyan-400 hover:text-cyan-300 font-semibold underline underline-offset-4">
+                sign in.
+              </Link>
+            </p>
             <p className="text-xs text-slate-400">
               Want to join as an individual citizen instead?{' '}
               <Link to="/signup/individual" className="text-emerald-400 hover:text-emerald-300 font-semibold underline underline-offset-4">

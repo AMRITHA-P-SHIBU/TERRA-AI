@@ -24,7 +24,7 @@ export default function AdminLogin() {
 
     try {
       setLoading(true);
-      const res = await login(email, password, false);
+      const res = await login(email, password, false, 'SUPER_ADMIN');
 
       if (res.user.account_type !== 'SUPER_ADMIN') {
         // Enforce admin portal restriction: Log out non-admin immediately
@@ -143,13 +143,20 @@ export default function AdminLogin() {
           </div>
         </div>
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 flex items-center justify-center gap-4 text-xs text-slate-400">
           <Link
             to="/login"
-            className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition"
+            className="inline-flex items-center gap-1.5 hover:text-emerald-400 transition"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Return to Standard Citizen & Org Login</span>
+            <span>Citizen Login</span>
+          </Link>
+          <span>•</span>
+          <Link
+            to="/login/organization"
+            className="hover:text-cyan-400 transition"
+          >
+            <span>Organization Sign In</span>
           </Link>
         </div>
       </div>

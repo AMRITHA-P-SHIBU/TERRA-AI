@@ -26,23 +26,14 @@ export default function Login() {
 
     try {
       setLoading(true);
-      const res = await login(email, password, rememberMe);
+      const res = await login(email, password, rememberMe, 'INDIVIDUAL');
 
       const user = res.user;
-      const org = res.organization;
-
-      // Smart role & approval routing
-      if (user.account_type === 'SUPER_ADMIN') {
-        navigate('/dashboard/admin', { replace: true });
-      } else if (user.account_type === 'ORG_ADMIN') {
-        if (!org || org.approval_status !== 'APPROVED') {
-          navigate('/pending-approval', { replace: true });
-        } else {
-          navigate('/dashboard/organization', { replace: true });
-        }
-      } else {
-        navigate('/dashboard/individual', { replace: true });
+      if (user.account_type !== 'INDIVIDUAL') {
+        throw new Error('Access Denied: This login page is exclusively for Individual Citizens.');
       }
+
+      navigate('/dashboard/individual', { replace: true });
     } catch (err) {
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
@@ -65,10 +56,10 @@ export default function Login() {
           <span className="text-2xl font-black tracking-tight text-white">TERRA <span className="text-emerald-400">AI</span></span>
         </Link>
         <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-          Welcome back to Terra AI
+          Individual Citizen Sign In
         </h2>
         <p className="mt-2 text-sm text-slate-400">
-          Sign in to access your environmental dashboard
+          Sign in to access your personal sustainability dashboard & eco habits
         </p>
       </div>
 
@@ -171,12 +162,18 @@ export default function Login() {
             </button>
           </form>
 
-          {/* Alternative Signup Links */}
-          <div className="mt-8 pt-6 border-t border-slate-800 text-center">
+          {/* Alternative Links */}
+          <div className="mt-8 pt-6 border-t border-slate-800 space-y-3 text-center">
             <p className="text-xs text-slate-400">
-              Don't have an account yet?{' '}
-              <Link to="/signup" className="text-emerald-400 hover:text-emerald-300 font-semibold underline underline-offset-4">
-                Choose account type & sign up
+              Don't have an individual account?{' '}
+              <Link to="/signup/individual" className="text-emerald-400 hover:text-emerald-300 font-semibold underline underline-offset-4">
+                Citizen Sign Up
+              </Link>
+            </p>
+            <p className="text-xs text-slate-400">
+              Are you an organization admin?{' '}
+              <Link to="/login/organization" className="text-cyan-400 hover:text-cyan-300 font-semibold underline underline-offset-4">
+                Organization Sign In
               </Link>
             </p>
           </div>
@@ -189,7 +186,7 @@ export default function Login() {
             className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-300 transition"
           >
             <Shield className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Are you a Platform Super Admin? Access Admin Login</span>
+            <span>Are you a Platform Super Admin? Access Admin Console</span>
           </Link>
         </div>
       </div>

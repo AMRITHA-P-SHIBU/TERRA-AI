@@ -269,7 +269,7 @@ export default function IndividualSignup() {
 
         <div className="mt-6 text-center">
           <p className="text-xs text-slate-400">
-            Already have an account?{' '}
+            Already have an individual citizen account?{' '}
             <Link to="/login" className="text-emerald-400 hover:text-emerald-300 font-semibold underline underline-offset-4">
               Sign In
             </Link>
