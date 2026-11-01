@@ -1,3 +1,4 @@
+import BackButton from "../components/BackButton";
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -278,6 +279,9 @@ export default function AdminDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <div className="flex items-center justify-start">
+        <BackButton fallback="/" label="Back to Home" />
+      </div>
       {/* Super Admin Top Header */}
       <div className="rounded-3xl bg-slate-900 border border-cyan-500/30 p-6 sm:p-8 shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="flex items-center gap-4">

@@ -1,3 +1,4 @@
+import BackButton from "../components/BackButton";
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -86,6 +87,9 @@ export default function IndividualDashboard({ onSelectTab }) {
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div className="flex items-center justify-start">
+          <BackButton fallback="/" label="Back to Home" />
+        </div>
         {/* Welcome Hero Banner */}
         <div className="relative rounded-3xl bg-gradient-to-r from-emerald-50 via-white to-emerald-50 border border-emerald-200 p-6 sm:p-10 shadow-md overflow-hidden">
           <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 w-80 h-80 bg-emerald-100/60 rounded-full blur-3xl pointer-events-none" />

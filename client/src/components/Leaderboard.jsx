@@ -1,3 +1,4 @@
+import BackButton from "./BackButton";
 import React from 'react';
 import { 
   Trophy, 
@@ -17,6 +18,9 @@ export default function Leaderboard({ currentUser, badges, leaderboard }) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+      <div>
+        <BackButton fallback="/dashboard/individual" label="Back to Dashboard" />
+      </div>
       {/* Banner */}
       <div className="bg-gradient-to-r from-amber-700 via-emerald-800 to-teal-900 rounded-3xl p-6 md:p-8 text-white shadow-xl shadow-emerald-950/10 relative overflow-hidden">
         <div className="relative z-10 max-w-2xl">

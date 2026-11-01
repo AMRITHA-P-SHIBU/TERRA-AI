@@ -1,3 +1,4 @@
+import BackButton from "./BackButton";
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, Heart, Image as ImageIcon, LoaderCircle, MessageCircle, Plus, RefreshCw } from 'lucide-react';
@@ -46,6 +47,9 @@ export default function GreenFeed() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
+      <div className="mb-4">
+        <BackButton fallback="/dashboard/individual" label="Back to Dashboard" />
+      </div>
       {selectedPostId && <PostDetailModal postId={selectedPostId} currentUserId={user?.id} onClose={() => { setSelectedPostId(null); load(); }} onDeleted={removePost} notify={notify} />}
       <header className="relative mb-7 overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-800 to-teal-800 p-6 text-white shadow-xl md:p-8">
         <div className="pointer-events-none absolute -bottom-8 right-0 translate-x-6 text-9xl opacity-10">🌿</div>

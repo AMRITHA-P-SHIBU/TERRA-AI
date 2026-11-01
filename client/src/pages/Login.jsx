@@ -103,7 +103,7 @@ export default function Login() {
           <form className="space-y-5" onSubmit={handleSubmit} autoComplete="off">
             {/* Username / Email Field */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
                 Username / Email
               </label>
               <div className="relative rounded-2xl shadow-2xs">
@@ -118,7 +118,7 @@ export default function Login() {
                   placeholder="Enter your username/email"
                   autoComplete="off"
                   name="terra-login-email"
-                  className="block w-full pl-11 pr-4 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm transition"
+                  className="block w-full pl-11 pr-4 py-3 bg-slate-50/70 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:bg-white transition"
                 />
               </div>
             </div>
@@ -148,7 +148,7 @@ export default function Login() {
                   placeholder="Enter your password"
                   autoComplete="new-password"
                   name="terra-login-password"
-                  className="block w-full pl-11 pr-11 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm transition"
+                  className="block w-full pl-11 pr-11 py-3 bg-slate-50/70 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:bg-white transition"
                 />
                 <button
                   type="button"

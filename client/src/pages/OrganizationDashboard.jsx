@@ -1,3 +1,4 @@
+import BackButton from "../components/BackButton";
 import { useState, useEffect, useRef, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '../context/AuthContext';
@@ -347,7 +348,7 @@ export default function OrganizationDashboard() {
   if (showPostRequests) {
     return (
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
-        <button onClick={() => setShowPostRequests(false)} className="text-sm font-semibold text-slate-500 hover:text-teal-700">← Back to organization dashboard</button>
+        <BackButton onClick={() => setShowPostRequests(false)} label="Back to Organization Dashboard" className="mb-2" />
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
           <PostRequestsPanel />
         </div>
@@ -357,6 +358,9 @@ export default function OrganizationDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <div className="flex items-center justify-start">
+        <BackButton fallback="/" label="Back to Home" />
+      </div>
       {/* Hidden File Input for Excel/CSV */}
       <input
         type="file"

@@ -1,3 +1,4 @@
+import BackButton from "./BackButton";
 import React, { useState, useMemo } from 'react';
 import { 
   Flame, 
@@ -84,6 +85,9 @@ export default function CarbonCalculator({ currentUser }) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="mb-4">
+        <BackButton fallback="/dashboard/individual" label="Back to Dashboard" />
+      </div>
       {/* Banner */}
       <div className="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 rounded-3xl p-6 md:p-8 text-white shadow-xl shadow-emerald-950/10 mb-8 relative overflow-hidden">
         <div className="relative z-10 max-w-2xl">

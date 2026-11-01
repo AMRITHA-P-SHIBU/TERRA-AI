@@ -1,3 +1,4 @@
+import BackButton from "../components/BackButton";
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -362,7 +363,7 @@ export default function ProfilePage() {
       {selectedPostId && <PostDetailModal postId={selectedPostId} currentUserId={user?.id} onClose={() => { setSelectedPostId(null); loadProfile(); }} onDeleted={onPostDeleted} notify={notify} />}
 
       <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10">
-        <button onClick={() => navigate(-1)} className="mb-5 text-sm font-semibold text-slate-500 hover:text-emerald-700">← Back</button>
+        <BackButton fallback="/dashboard/individual" label="Back to Dashboard" className="mb-5" />
         {loadError && <div role="alert" className="mb-5 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800"><AlertCircle className="h-4 w-4" />{loadError}<button onClick={loadProfile} className="ml-auto font-bold underline">Retry</button></div>}
 
         <section className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-5 shadow-sm sm:p-8">

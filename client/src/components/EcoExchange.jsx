@@ -1,3 +1,4 @@
+import BackButton from "./BackButton";
 import React, { useState } from 'react';
 import { 
   ShoppingBag, 
@@ -118,6 +119,9 @@ export default function EcoExchange({ items, setItems, currentUser }) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="mb-4">
+        <BackButton fallback="/dashboard/individual" label="Back to Dashboard" />
+      </div>
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-teal-800 via-emerald-800 to-green-900 rounded-3xl p-6 md:p-8 text-white shadow-xl shadow-emerald-950/10 mb-8 relative overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">

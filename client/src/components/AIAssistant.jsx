@@ -1,4 +1,7 @@
+import BackButton from "./BackButton";
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { 
   Bot, 
   Send, 
@@ -8,20 +11,23 @@ import {
   RotateCcw,
   User,
   CheckCircle,
-  Copy
+  Copy,
+  Zap
 } from 'lucide-react';
 
-export default function AIAssistant({ initialSuggestions }) {
+export default function AIAssistant({ initialSuggestions = [] }) {
   const [messages, setMessages] = useState([
     {
       id: 'm1',
       sender: 'ai',
-      text: "Hello! I am your Terra AI Eco Assistant 🌿. I can help you with composting guides, zero-waste alternatives, circular recycling, upcycling crafts (like coconut shells!), and lowering your personal carbon footprint. What sustainable habit are you exploring today?",
-      timestamp: 'Just now'
+      text: "Hello! I am your **Terra AI Eco Assistant** 🌿.\n\nI can help you with:\n- 🪴 Composting guides & odor-free balcony setups\n- ♻️ Zero-waste alternatives & plastic swaps\n- 🥥 Upcycling crafts & circular DIY ideas\n- ⚡ Energy efficiency & renewable options\n- 📉 Lowering your personal carbon footprint\n\nWhat sustainable habit or question are you exploring today?",
+      timestamp: 'Just now',
+      source: 'gemini-api'
     }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -32,70 +38,21 @@ export default function AIAssistant({ initialSuggestions }) {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  const generateAIResponse = (userPrompt) => {
-    const lower = userPrompt.toLowerCase();
-
-    if (lower.includes('compost') || lower.includes('smell') || lower.includes('balcony')) {
-      return `### How to maintain an odor-free balcony compost bin 🪴:
-
-1. **The 3:1 Brown to Green Ratio**: Always add 3 handfuls of "browns" (dry leaves, cocopeat, crushed egg cartons, or cardboard shreds) for every 1 handful of "greens" (vegetable peels, tea dregs, fruit scraps). Browns absorb moisture and eliminate odors.
-2. **Avoid Cooked Food & Dairy**: Never put oily curries, bones, meat, or milk products in a basic apartment bin. These attract pests and smell.
-3. **Aeration (Oxygen)**: Stir your compost pile once a week. Anaerobic bacteria (which thrive without air) produce bad odors; aerating brings good aerobic microbes!
-4. **Use Microbial Inoculant / Buttermilk**: A splash of sour buttermilk or bio-inoculant powder accelerates decomposition without odor.
-
-*Pro-tip: Check our **Eco Exchange Hub** to find pre-loved terracotta Khamba compost pots in your area!*`;
-    }
-
-    if (lower.includes('plastic') || lower.includes('alternative') || lower.includes('kitchen')) {
-      return `### Practical plastic-free swaps for home & kitchen 🍶:
-
-1. **Beeswax or Plant-Wax Food Wraps**: Replaces cling wrap for covering bowls and wrapping cut fruits. Washable and lasts over a year.
-2. **Stainless Steel or Glass Storage**: Ditch plastic containers for pantry pulses and refrigerated leftovers to avoid microplastic leaching.
-3. **Natural Loofah & Coconut Coir Scrubbers**: Replace synthetic plastic dish sponges with dried ridge gourd loofah or coconut husk scrubbers. They biodegrade 100% in your compost bin!
-4. **Cotton / Jute Produce Bags**: Keep 4-5 lightweight cloth bags in your vehicle or backpack for weekly vegetable market trips.`;
-    }
-
-    if (lower.includes('coconut') || lower.includes('upcycle') || lower.includes('craft')) {
-      return `### 4 Creative ways to upcycle coconut shells 🥥:
-
-1. **Balcony Succulent & Hanging Planter**: Sand down the outer fibers with sandpaper, drill 2 drainage holes at the bottom and 3 on the rim for jute ropes. Rub with coconut oil for a water-resistant polish.
-2. **Natural Soy Candle Cups**: Secure a wooden or cotton wick to the shell base and pour melted soy wax with lemongrass or lavender essential oils.
-3. **Zero-Waste Soap Dish**: Cut shell in half and drill small drainage holes so soap never sits in soggy water.
-4. **Organic Seed Starter Bowls**: Use directly as biodegradable seedling pots. When roots sprout, you can plant the entire shell into soil!
-
-*Share your finished craft on **GreenFeed** to earn +25 EcoPoints!*`;
-    }
-
-    if (lower.includes('electricity') || lower.includes('energy') || lower.includes('solar') || lower.includes('ac')) {
-      return `### Smart ways to cut electricity emissions & bills ⚡:
-
-1. **The 24°C Rule for Air Conditioners**: Setting your AC at 24°C instead of 18°C consumes 20-30% less electricity while providing optimal cooling.
-2. **Switch to 5-Star Inverter Appliances**: Replacing old non-inverter refrigerators or fans with BLDC motor fans cuts ceiling fan power draw from 75W to 28W.
-3. **Phantom Load Elimination**: Electronics on standby (TV boxes, microwave clocks, laptop chargers) consume up to 8% of residential power. Switch off plug sockets when idle.
-4. **Rooftop Solar Feasibility**: Even a 2kW grid-tied rooftop solar array offsets ~240 units/month, eliminating almost 2 tons of CO₂ annually.`;
-    }
-
-    return `### Personalized Sustainability Advice 🌿:
-
-Thank you for your question regarding **"${userPrompt}"**!
-
-Here is how you can take meaningful eco-friendly action:
-- **Small Everyday Habits**: Sustainable living isn't about perfection by a few people; it's about millions practicing small, conscious choices daily.
-- **Circular Mindset**: Before buying new, check if you can borrow, repair, or find it on the **Eco Exchange Hub**.
-- **Community Impact**: Log your activity on **GreenFeed** to inspire friends and neighbors to join the green transition.
-
-Would you like specific step-by-step guidance on composting, zero-waste products, or calculating your emission footprint?`;
+  const copyToClipboard = (text, id) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const handleSendMessage = async (textToSend) => {
     const query = textToSend || inputValue;
-    if (!query.trim()) return;
+    if (!query.trim() || isTyping) return;
 
     const userMsg = {
       id: `u-${Date.now()}`,
       sender: 'user',
       text: query,
-      timestamp: 'Just now'
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
     setMessages(prev => [...prev, userMsg]);
@@ -103,56 +60,92 @@ Would you like specific step-by-step guidance on composting, zero-waste products
     setIsTyping(true);
 
     try {
+      // Build conversation history for context
+      const history = messages.slice(-8).map(m => ({
+        sender: m.sender,
+        text: m.text
+      }));
+
       const response = await fetch('/api/ai-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: query }),
+        body: JSON.stringify({ 
+          prompt: query,
+          history
+        }),
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const text = await response.text();
+        let data = {};
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = { reply: text };
+        }
+
+        const reply = data.reply || data.response || "I apologize, but I couldn't generate a response. Please try again.";
         const aiMsg = {
           id: `ai-${Date.now()}`,
           sender: 'ai',
-          text: data.reply,
-          timestamp: 'Just now',
-          source: data.source
+          text: reply,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          source: data.source || 'gemini-api'
         };
         setMessages(prev => [...prev, aiMsg]);
         setIsTyping(false);
         return;
+      } else {
+        const text = await response.text();
+        let errData = {};
+        try { errData = JSON.parse(text); } catch {}
+        console.error('AI chat endpoint returned status:', response.status, errData);
       }
-    } catch {
-      // Fallback to local sustainability engine if backend is offline
+    } catch (err) {
+      console.warn('Network issue reaching server AI:', err);
     }
 
-    setTimeout(() => {
-      const replyText = generateAIResponse(query);
-      const aiMsg = {
-        id: `ai-${Date.now()}`,
-        sender: 'ai',
-        text: replyText,
-        timestamp: 'Just now'
-      };
-      setMessages(prev => [...prev, aiMsg]);
-      setIsTyping(false);
-    }, 600);
+    // Fallback if network or server failed completely
+    const fallbackMsg = {
+      id: `ai-${Date.now()}`,
+      sender: 'ai',
+      text: "### 🌱 Sustainability Advice\n\nI'm having trouble connecting to the live AI engine at this exact moment.\n\nHere is a quick eco tip for **\"" + query + "\"**:\n- **Every small effort counts**: Whether reducing energy use, cutting down plastic, or composting at home.\n- **Check our Eco Exchange**: Find tools, seeds, or upcycled materials in your community.\n- **Log on GreenFeed**: Share your sustainable progress with fellow eco-citizens!",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      source: 'offline-fallback'
+    };
+    setMessages(prev => [...prev, fallbackMsg]);
+    setIsTyping(false);
   };
+
+  const defaultSuggestions = [
+    'How can I start a zero-smell compost bin on an apartment balcony?',
+    'What are some practical replacements for single-use plastic in the kitchen?',
+    'How do I calculate if installing residential solar panels is worth it?',
+    'Suggest 5 creative ways to upcycle discarded plastic bottles or coconut shells.'
+  ];
+
+  const suggestionsToShow = (initialSuggestions && initialSuggestions.length > 0) 
+    ? initialSuggestions 
+    : defaultSuggestions;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="mb-4">
+        <BackButton fallback="/dashboard/individual" label="Back to Dashboard" />
+      </div>
+
       {/* Banner */}
       <div className="bg-gradient-to-r from-emerald-800 via-teal-800 to-cyan-900 rounded-3xl p-6 md:p-8 text-white shadow-xl shadow-emerald-950/10 mb-8 relative overflow-hidden">
         <div className="relative z-10 max-w-xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/30 text-emerald-200 text-xs font-semibold backdrop-blur-xs mb-3 border border-emerald-400/20">
             <Bot className="w-3.5 h-3.5 text-emerald-300" />
-            <span>AI Eco Assistant (Powered by LLM)</span>
+            <span>AI Eco Assistant • Powered by Gemini AI</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
             Your 24/7 AI Sustainability Advisor
           </h1>
           <p className="mt-2 text-emerald-100 text-sm leading-relaxed">
-            Instant guidance on composting, zero-waste living, upcycling waste items, home energy efficiency, and eco-friendly shopping alternatives.
+            Real-time, intelligent guidance on composting, zero-waste alternatives, circular upcycling, renewable energy, and personal carbon footprint reduction.
           </p>
         </div>
       </div>
@@ -164,20 +157,21 @@ Would you like specific step-by-step guidance on composting, zero-waste products
           <span>Popular Questions & Prompts:</span>
         </p>
         <div className="flex flex-wrap gap-2">
-          {initialSuggestions.map((prompt, index) => (
+          {suggestionsToShow.map((prompt, index) => (
             <button
               key={index}
               onClick={() => handleSendMessage(prompt)}
-              className="text-xs px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-900 transition-all text-left shadow-xs cursor-pointer"
+              className="text-xs px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-900 transition-all text-left shadow-xs cursor-pointer flex items-center gap-1.5"
             >
-              🌿 {prompt}
+              <Leaf className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span>{prompt}</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* Chat Container */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-xs flex flex-col h-[540px] overflow-hidden">
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col h-[600px] overflow-hidden">
         {/* Messages Stream */}
         <div className="flex-1 p-5 overflow-y-auto space-y-4">
           {messages.map((msg) => {
@@ -188,30 +182,60 @@ Would you like specific step-by-step guidance on composting, zero-waste products
                 className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}
               >
                 {!isUser && (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shrink-0 shadow-sm">
                     <Bot className="w-4 h-4" />
                   </div>
                 )}
 
                 <div
-                  className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-4 text-sm leading-relaxed ${
+                  className={`max-w-[85%] sm:max-w-[80%] rounded-2xl p-4 text-sm leading-relaxed relative group ${
                     isUser
-                      ? 'bg-emerald-600 text-white rounded-tr-none'
-                      : 'bg-slate-50 border border-slate-100 text-slate-800 rounded-tl-none whitespace-pre-wrap'
+                      ? 'bg-emerald-600 text-white rounded-tr-none shadow-sm'
+                      : 'bg-slate-50 border border-slate-200/80 text-slate-800 rounded-tl-none shadow-xs'
                   }`}
                 >
-                  {msg.text}
-                  <div
-                    className={`text-[10px] mt-2 font-medium ${
-                      isUser ? 'text-emerald-100' : 'text-slate-400'
-                    }`}
-                  >
-                    {msg.timestamp}
+                  {isUser ? (
+                    <div className="whitespace-pre-wrap">{msg.text}</div>
+                  ) : (
+                    <div className="prose prose-sm max-w-none text-slate-800 space-y-2 [&>h3]:text-base [&>h3]:font-bold [&>h3]:text-emerald-900 [&>h3]:mt-2 [&>h3]:mb-1 [&>ul]:list-disc [&>ul]:pl-5 [&>ol]:list-decimal [&>ol]:pl-5 [&>p]:mb-2 [&>strong]:text-emerald-950">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {msg.text}
+                      </ReactMarkdown>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between gap-4 mt-2 pt-1 border-t border-black/5">
+                    <span
+                      className={`text-[10px] font-medium ${
+                        isUser ? 'text-emerald-100' : 'text-slate-400'
+                      }`}
+                    >
+                      {msg.timestamp}
+                      {msg.source && !isUser && (
+                        <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-100/70 text-emerald-800 font-medium">
+                          {msg.source === 'gemini-api' ? '⚡ Gemini AI' : '🌿 Eco Knowledge'}
+                        </span>
+                      )}
+                    </span>
+
+                    {!isUser && (
+                      <button
+                        onClick={() => copyToClipboard(msg.text, msg.id)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-emerald-600 text-xs p-1"
+                        title="Copy message"
+                      >
+                        {copiedId === msg.id ? (
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
 
                 {isUser && (
-                  <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center shrink-0">
                     <User className="w-4 h-4" />
                   </div>
                 )}
@@ -221,14 +245,14 @@ Would you like specific step-by-step guidance on composting, zero-waste products
 
           {isTyping && (
             <div className="flex gap-3 justify-start items-center">
-              <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
                 <Bot className="w-4 h-4" />
               </div>
-              <div className="bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 rounded-tl-none text-slate-500 text-xs flex items-center gap-1.5">
+              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl px-4 py-3 rounded-tl-none text-slate-600 text-xs flex items-center gap-2 shadow-xs">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-bounce" />
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-bounce [animation-delay:0.2s]" />
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-bounce [animation-delay:0.4s]" />
-                <span className="ml-1 text-[11px] font-medium">Terra AI is generating guidance...</span>
+                <span className="ml-1 text-[11px] font-medium text-emerald-700">Terra AI is thinking...</span>
               </div>
             </div>
           )}
@@ -236,7 +260,7 @@ Would you like specific step-by-step guidance on composting, zero-waste products
         </div>
 
         {/* Chat Input Bar */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+        <div className="p-4 border-t border-slate-100 bg-slate-50/70">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -249,11 +273,12 @@ Would you like specific step-by-step guidance on composting, zero-waste products
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="Ask anything (e.g. How to recycle tetra paks or compost citrus peels?)"
-              className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 bg-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 bg-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none placeholder:text-slate-400"
+              disabled={isTyping}
             />
             <button
               type="submit"
-              disabled={!inputValue.trim()}
+              disabled={!inputValue.trim() || isTyping}
               className="px-5 py-3 rounded-2xl bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 disabled:opacity-40 disabled:hover:bg-emerald-600 shadow-md shadow-emerald-600/20 transition-all cursor-pointer flex items-center gap-2 shrink-0"
             >
               <span>Send</span>
