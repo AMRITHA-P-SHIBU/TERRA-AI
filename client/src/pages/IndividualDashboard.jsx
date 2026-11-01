@@ -22,7 +22,9 @@ import {
   Loader2,
   X,
   KeyRound,
+  Trophy,
 } from 'lucide-react';
+import { getProfile, getLeaderboard } from '../services/profileService';
 
 export default function IndividualDashboard({ onSelectTab }) {
   const { user, changePassword } = useAuth();
@@ -30,6 +32,13 @@ export default function IndividualDashboard({ onSelectTab }) {
 
   // Password Change Modal State (auto-opens if must_change_password is true)
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [livePoints, setLivePoints] = useState(null);
+  const [topUsers, setTopUsers] = useState([]);
+
+  useEffect(() => {
+    getProfile().then(p => setLivePoints(p?.total_ecopoints ?? 0)).catch(() => {});
+    getLeaderboard().then(data => setTopUsers((data || []).slice(0, 5))).catch(() => {});
+  }, []);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -115,7 +124,7 @@ export default function IndividualDashboard({ onSelectTab }) {
               </div>
               <div>
                 <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Earned EcoPoints</span>
-                <p className="text-2xl sm:text-3xl font-black text-emerald-700">140 pts</p>
+                <p className="text-2xl sm:text-3xl font-black text-emerald-700">{livePoints !== null ? livePoints : 0} pts</p>
                 <span className="text-[11px] text-emerald-600 font-medium">Level 2 Planet Guardian</span>
               </div>
             </div>
@@ -257,6 +266,72 @@ export default function IndividualDashboard({ onSelectTab }) {
               </div>
             </div>
           </div>
+        </div>
+
+        
+        {/* Module 5: Community Eco-Leaderboard */}
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                <Trophy className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-800">Community Eco-Leaderboard</h3>
+                <p className="text-xs text-slate-400">Top environmental champions ranked by verified EcoPoints</p>
+              </div>
+            </div>
+            <button
+              onClick={() => handleLaunchModule('leaderboard')}
+              className="text-xs text-emerald-600 hover:text-emerald-700 font-bold flex items-center gap-1 cursor-pointer"
+            >
+              <span>View Full Leaderboard</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {topUsers.length === 0 ? (
+            <p className="text-xs text-slate-400 text-center py-6">No leaderboard data yet. Earn EcoPoints by posting on GreenFeed!</p>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {topUsers.map((u, idx) => {
+                const medals = ['🥇', '🥈', '🥉'];
+                const isCurrentUser = u.user_id === user?.id;
+                return (
+                  <div
+                    key={u.user_id || idx}
+                    className={`flex items-center justify-between py-3 px-2 rounded-xl transition ${
+                      isCurrentUser ? 'bg-emerald-50/70 font-bold' : 'hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="w-6 text-center text-sm font-black text-slate-400">
+                        {idx < 3 ? medals[idx] : `#${idx + 1}`}
+                      </span>
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center text-xs font-bold text-emerald-700 border border-emerald-200">
+                        {u.full_name?.[0]?.toUpperCase() || 'T'}
+                      </div>
+                      <div>
+                        <span className="text-sm font-semibold text-slate-800 flex items-center gap-1.5">
+                          {u.full_name}
+                          {isCurrentUser && (
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-700 font-bold">
+                              You
+                            </span>
+                          )}
+                        </span>
+                        <p className="text-[11px] text-slate-400">Rank #{u.rank || idx + 1}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-black text-emerald-700">{u.total_ecopoints}</span>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 ml-1">pts</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* User Credentials & Security Info */}

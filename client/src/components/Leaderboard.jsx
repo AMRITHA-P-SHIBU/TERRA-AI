@@ -1,5 +1,6 @@
 import BackButton from "./BackButton";
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { getLeaderboard } from '../services/profileService';
 import { 
   Trophy, 
   Award, 
@@ -9,12 +10,26 @@ import {
   Flame, 
   CheckCircle2, 
   Lock,
-  ArrowUpRight
+  ArrowUpRight,
+  Loader2,
 } from 'lucide-react';
 
-export default function Leaderboard({ currentUser, badges, leaderboard }) {
+export default function Leaderboard({ currentUser, badges, leaderboard: staticLeaderboard }) {
+  const [liveLeaderboard, setLiveLeaderboard] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getLeaderboard()
+      .then(data => setLiveLeaderboard(data || []))
+      .catch(() => setLiveLeaderboard([]))
+      .finally(() => setLoading(false));
+  }, []);
+
   const pointsToNext = currentUser.nextLevelPoints - currentUser.ecoPoints;
   const progressPct = Math.round((currentUser.ecoPoints / currentUser.nextLevelPoints) * 100);
+
+  // Use live leaderboard if available, otherwise fall back to static
+  const displayLeaderboard = liveLeaderboard.length > 0 ? liveLeaderboard : staticLeaderboard;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
@@ -180,45 +195,86 @@ export default function Leaderboard({ currentUser, badges, leaderboard }) {
               <Trophy className="w-5 h-5 text-amber-500" />
               <span>Community Rankings</span>
             </h3>
-            <span className="text-xs text-slate-500">This Month</span>
+            <span className="text-xs text-slate-500">
+              {liveLeaderboard.length > 0 ? 'Live Data' : 'This Month'}
+            </span>
           </div>
 
           <div className="bg-white rounded-3xl border border-slate-200 shadow-xs divide-y divide-slate-100 overflow-hidden">
-            {leaderboard.map((user) => {
-              const isCurrentUser = user.name.includes('You');
-              return (
-                <div
-                  key={user.rank}
-                  className={`p-4 flex items-center justify-between transition-colors ${
-                    isCurrentUser ? 'bg-emerald-50/70 font-bold' : 'hover:bg-slate-50'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="w-6 text-center text-sm font-black text-slate-400">
-                      {user.rank <= 3 ? user.badge : `#${user.rank}`}
-                    </span>
-                    <img
-                      src={user.avatar}
-                      alt={user.name}
-                      className="w-10 h-10 rounded-full object-cover ring-2 ring-slate-100"
-                    />
-                    <div>
-                      <p className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                        <span>{user.name}</span>
-                      </p>
-                      <p className="text-xs text-slate-500 font-medium">
-                        {user.level} • {user.actions} actions
-                      </p>
+            {loading ? (
+              <div className="p-8 flex flex-col items-center justify-center text-slate-400">
+                <Loader2 className="w-6 h-6 animate-spin mb-2" />
+                <span className="text-xs">Loading leaderboard...</span>
+              </div>
+            ) : displayLeaderboard.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 text-xs">
+                No leaderboard data yet. Start earning EcoPoints!
+              </div>
+            ) : liveLeaderboard.length > 0 ? (
+              /* Live API leaderboard */
+              liveLeaderboard.map((user, idx) => {
+                const medals = ['🥇', '🥈', '🥉'];
+                return (
+                  <div
+                    key={user.user_id}
+                    className="p-4 flex items-center justify-between hover:bg-slate-50 transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="w-6 text-center text-sm font-black text-slate-400">
+                        {idx < 3 ? medals[idx] : `#${idx + 1}`}
+                      </span>
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 border-2 border-slate-100 flex items-center justify-center text-sm font-bold text-emerald-700">
+                        {user.full_name?.[0]?.toUpperCase() || 'T'}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-900">{user.full_name}</p>
+                        <p className="text-xs text-slate-500 font-medium">Rank #{user.rank}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-black text-emerald-700">{user.total_ecopoints}</span>
+                      <p className="text-[10px] text-slate-400 font-semibold uppercase">pts</p>
                     </div>
                   </div>
-
-                  <div className="text-right">
-                    <span className="text-sm font-black text-emerald-700">{user.points}</span>
-                    <p className="text-[10px] text-slate-400 font-semibold uppercase">pts</p>
+                );
+              })
+            ) : (
+              /* Static fallback leaderboard */
+              staticLeaderboard.map((user) => {
+                const isCurrentUser = user.name.includes('You');
+                return (
+                  <div
+                    key={user.rank}
+                    className={`p-4 flex items-center justify-between transition-colors ${
+                      isCurrentUser ? 'bg-emerald-50/70 font-bold' : 'hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="w-6 text-center text-sm font-black text-slate-400">
+                        {user.rank <= 3 ? user.badge : `#${user.rank}`}
+                      </span>
+                      <img
+                        src={user.avatar}
+                        alt={user.name}
+                        className="w-10 h-10 rounded-full object-cover ring-2 ring-slate-100"
+                      />
+                      <div>
+                        <p className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                          <span>{user.name}</span>
+                        </p>
+                        <p className="text-xs text-slate-500 font-medium">
+                          {user.level} • {user.actions} actions
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-black text-emerald-700">{user.points}</span>
+                      <p className="text-[10px] text-slate-400 font-semibold uppercase">pts</p>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
       </div>

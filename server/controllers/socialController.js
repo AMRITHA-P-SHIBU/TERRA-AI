@@ -2,8 +2,90 @@ import { randomUUID } from 'crypto';
 import path from 'path';
 import { supabaseAdmin } from '../supabase.js';
 import { query } from '../config/database.js';
+import { GoogleGenAI } from '@google/genai';
 
 const MEDIA_BUCKET = 'post-media';
+async function awardEcoPointsToUser(userId, points) {
+  try {
+    const { data: iu } = await supabaseAdmin
+      .from('individual_users')
+      .select('total_ecopoints')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (iu !== null && iu !== undefined) {
+      const current = Number(iu.total_ecopoints) || 0;
+      await supabaseAdmin
+        .from('individual_users')
+        .update({ total_ecopoints: current + points })
+        .eq('id', userId);
+      console.log(`[EcoPoints] Awarded ${points} pts to user ${userId} (new total: ${current + points})`);
+    }
+  } catch (err) {
+    console.error('[EcoPoints Award Error]:', err.message);
+  }
+}
+
+const genai = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
+
+async function analyzeImageForEcoPoints(imageBuffer, mimeType, caption) {
+  if (!genai) {
+    return { category: 'OTHER_GREEN', points: 15, reason: 'Green action verified (offline mode)' };
+  }
+  try {
+    const base64 = imageBuffer.toString('base64');
+    const prompt = `You are an environmental sustainability expert for the TERRA AI platform.
+Analyze this photo and caption to evaluate if it displays a genuine eco-friendly / sustainability action.
+
+Caption: "${caption || '(No caption provided)'}"
+
+Reward Criteria:
+- TREE_PLANTING: Planting trees, shrubs, or saplings (25 pts)
+- CLEANUP_DRIVE: Picking up litter, beach/river/street cleanup, plogging (25 pts)
+- RECYCLING: Sorting recyclables, composting organic waste, zero-waste habit (20 pts)
+- CYCLING_WALKING: Biking, walking, using green transit instead of driving (15 pts)
+- GARDENING: Urban agriculture, home balcony garden, growing food (20 pts)
+- RENEWABLE_ENERGY: Solar panel installation, clean energy equipment (30 pts)
+- WATER_CONSERVATION: Rainwater harvesting, drip irrigation, water saving (20 pts)
+- WILDLIFE_PROTECTION: Rescuing wildlife, bird feeder, habitat protection (25 pts)
+- ECO_PRODUCT: Reusable bag/bottle, natural soap, eco swap (10 pts)
+- AWARENESS_EVENT: Environmental workshop, eco seminar, community talk (15 pts)
+- OTHER_GREEN: Any other positive sustainability action (10 pts)
+- NOT_ECO: Selfies, non-green food, spam, inappropriate, or irrelevant content (0 pts)
+
+Respond strictly in valid JSON format:
+{
+  "category": "CATEGORY_NAME",
+  "points": number,
+  "reason": "1-2 sentence evaluation of the visual evidence"
+}`;
+
+    const response = await genai.models.generateContent({
+      model: 'gemini-3.5-flash-lite',
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            { inlineData: { mimeType: mimeType || 'image/jpeg', data: base64 } },
+            { text: prompt },
+          ],
+        },
+      ],
+    });
+
+    const clean = response.text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+    const parsed = JSON.parse(clean);
+    return {
+      category: parsed.category || 'OTHER_GREEN',
+      points: typeof parsed.points === 'number' ? Math.max(0, Math.min(parsed.points, 50)) : 15,
+      reason: parsed.reason || 'Verified environmental action.',
+    };
+  } catch (err) {
+    console.error('[Gemini EcoPoints Error]:', err.message);
+    return { category: 'OTHER_GREEN', points: 15, reason: 'Green action registered (auto-verified)' };
+  }
+}
+
 const IMAGE_LIMIT = 10 * 1024 * 1024;
 const VIDEO_LIMIT = 50 * 1024 * 1024;
 const CAPTION_LIMIT = 2200;
@@ -262,6 +344,12 @@ export async function createPost(req, res) {
       .upload(uploadedPath, file.buffer, { contentType: file.mimetype, upsert: false });
     if (uploadError) throw new Error(`Media upload failed: ${uploadError.message}`);
 
+    let ecoAnalysis = null;
+    if (mediaType === 'image') {
+      ecoAnalysis = await analyzeImageForEcoPoints(file.buffer, file.mimetype, caption);
+      console.log('[EcoPoints Analysis]:', ecoAnalysis);
+    }
+
     const row = {
       author_id: req.user.id,
       author_scope: viewer.scope,
@@ -273,6 +361,10 @@ export async function createPost(req, res) {
     };
     const { data, error } = await supabaseAdmin.from('posts').insert(row).select('*').single();
     if (error) throw new Error(error.message);
+    if (isOrgAdmin && ecoAnalysis && ecoAnalysis.points > 0) {
+      await awardEcoPointsToUser(req.user.id, ecoAnalysis.points);
+    }
+
     return res.status(201).json({
       post: { ...data, media_url: await signedMediaUrl(data.media_path), like_count: 0, comment_count: 0 },
       message: isOrgAdmin ? 'Your post is now visible in your organization feed.' : 'Your post has been sent for approval.',
@@ -464,9 +556,60 @@ export async function reviewPost(req, res) {
       }
       throw new Error(reviewError.message);
     }
+    // Award EcoPoints on review approval
+    if (action === 'APPROVED' && post.media_path && post.media_type === 'image') {
+      try {
+        const { data: fileData, error: dlError } = await supabaseAdmin.storage
+          .from(MEDIA_BUCKET)
+          .download(post.media_path);
+        if (!dlError && fileData) {
+          const buffer = Buffer.from(await fileData.arrayBuffer());
+          const ext = post.media_path.split('.').pop().toLowerCase();
+          const mimeMap = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif' };
+          const mime = mimeMap[ext] || 'image/jpeg';
+          const analysis = await analyzeImageForEcoPoints(buffer, mime, post.caption);
+          if (analysis.points > 0) {
+            await awardEcoPointsToUser(post.author_id, analysis.points);
+            console.log(`[EcoPoints] Awarded ${analysis.points} pts to user ${post.author_id} for ${analysis.category}`);
+          }
+        }
+      } catch (ecoErr) {
+        console.error('[EcoPoints review error]:', ecoErr.message);
+      }
+    }
+
     return res.json({ post: updated });
   } catch (error) {
     console.error('[reviewPost Error]:', error);
     return res.status(500).json({ error: error.message || 'Failed to review post.' });
+  }
+}
+
+
+export async function getLeaderboard(req, res) {
+  try {
+    if (!requireSupabaseAdmin(res)) return;
+    const { data: indUsers, error } = await supabaseAdmin
+      .from('individual_users')
+      .select('id, total_ecopoints')
+      .order('total_ecopoints', { ascending: false })
+      .limit(20);
+
+    if (error) throw new Error(error.message);
+
+    const userIds = (indUsers || []).map((u) => u.id);
+    const names = await authorNames(userIds);
+
+    const leaderboard = (indUsers || []).map((u, idx) => ({
+      rank: idx + 1,
+      user_id: u.id,
+      full_name: names.get(u.id) || 'Terra Member',
+      total_ecopoints: Number(u.total_ecopoints) || 0,
+    }));
+
+    return res.json({ leaderboard });
+  } catch (error) {
+    console.error('[getLeaderboard Error]:', error);
+    return res.status(500).json({ error: 'Failed to load leaderboard.' });
   }
 }

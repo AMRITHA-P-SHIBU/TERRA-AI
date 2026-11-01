@@ -86,3 +86,7 @@ export async function reviewPost(postId, action, remarks = '') {
     body: JSON.stringify({ action, remarks }),
   });
 }
+export async function getLeaderboard() {
+  const { leaderboard } = await api('/leaderboard');
+  return leaderboard;
+}

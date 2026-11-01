@@ -11,6 +11,7 @@ import {
   getMyProfile,
   getPostDetail,
   getPostRequests,
+  getLeaderboard,
   reviewPost,
   toggleLike,
   updateMyBio,
@@ -51,5 +52,8 @@ router.post('/posts/:id/like', toggleLike);
 router.post('/posts/:id/comments', addPostComment);
 router.delete('/posts/:id/comments/:commentId', deletePostComment);
 router.patch('/posts/:id/review', reviewPost);
+
+router.use('/leaderboard', authenticate);
+router.get('/leaderboard', getLeaderboard);
 
 export default router;

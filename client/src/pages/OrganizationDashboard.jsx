@@ -26,8 +26,11 @@ import {
   Check,
   Lock,
   User,
+  Trophy,
+  Sparkles,
 } from 'lucide-react';
 import PostRequestsPanel from '../components/PostRequestsPanel';
+import { getLeaderboard } from '../services/profileService';
 
 export default function OrganizationDashboard() {
   const { user, organization, membership } = useAuth();
@@ -88,8 +91,11 @@ export default function OrganizationDashboard() {
     }
   };
 
+  const [orgLeaderboard, setOrgLeaderboard] = useState([]);
+
   useEffect(() => {
     fetchMembers();
+    getLeaderboard().then(data => setOrgLeaderboard((data || []).slice(0, 5))).catch(() => {});
   }, []);
 
   // Filtered members based on live search
@@ -471,6 +477,56 @@ export default function OrganizationDashboard() {
         <span className="hidden sm:inline-block px-2.5 py-0.5 rounded bg-teal-100 text-teal-700 text-[11px] font-mono border border-teal-200">
           Role: {membership?.role || 'ORG_ADMIN'}
         </span>
+      </div>
+
+      
+      {/* Community Eco-Leaderboard Widget */}
+      <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
+              <Trophy className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-800">Community Eco-Leaderboard</h3>
+              <p className="text-xs text-slate-400">Campus & neighborhood sustainability rankings</p>
+            </div>
+          </div>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Live Standings</span>
+          </div>
+        </div>
+
+        {orgLeaderboard.length === 0 ? (
+          <p className="text-xs text-slate-400 text-center py-4">No leaderboard data yet.</p>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {orgLeaderboard.map((u, idx) => {
+              const medals = ['🥇', '🥈', '🥉'];
+              return (
+                <div key={u.user_id || idx} className="flex items-center justify-between py-3 px-2 hover:bg-slate-50 rounded-xl transition">
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 text-center text-sm font-black text-slate-400">
+                      {idx < 3 ? medals[idx] : `#${idx + 1}`}
+                    </span>
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center text-xs font-bold text-emerald-700 border border-emerald-200">
+                      {u.full_name?.[0]?.toUpperCase() || 'T'}
+                    </div>
+                    <div>
+                      <span className="text-sm font-semibold text-slate-800">{u.full_name}</span>
+                      <p className="text-[11px] text-slate-400">Rank #{u.rank || idx + 1}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-sm font-black text-emerald-700">{u.total_ecopoints}</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 ml-1">pts</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Member Management Section: All Members */}
