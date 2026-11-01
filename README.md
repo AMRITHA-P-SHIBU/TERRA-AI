@@ -105,6 +105,16 @@ cd server
 npm run migrate
 ```
 
+#### Profile, GreenFeed, and media-post workflow
+
+The app's current sign-in system uses the existing Express HttpOnly-cookie JWT accounts in `public.users` (not browser Supabase Auth sessions). After the initial schema is installed, open the SQL Editor for the **same existing Supabase project/database** and run [`server/migrations/004_social_profiles_and_posts.sql`](./server/migrations/004_social_profiles_and_posts.sql). Do not create another Supabase project or client.
+
+The migration backfills `individual_users` and `organization_users` from existing `users` and `organization_members`, adds scoped post/like/comment/review tables and policies, and creates the private `post-media` Storage bucket. It retains an incompatible legacy GreenFeed `posts` table under `legacy_greenfeed_posts`; old Auth-ID posts are not automatically copied into the cookie-auth tables because those IDs are not guaranteed to represent the same accounts.
+
+Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in the **server** environment for private uploads, signed media URLs, and server-side post review. Never expose the service-role key to the client. The client continues to use the current API and auth cookies. Profile, feed, and moderation access is checked by the authenticated server API; direct anonymous Supabase access is denied by RLS.
+
+The migration includes media size/type constraints (10 MB images, 50 MB videos) and the UI checks video duration up to 60 seconds. Review-queue routing is derived from the author's database profile: individual requests go to Super Admin; organization-member requests are limited to that same organization's active admin.
+
 ---
 
 ### 3. Seed Platform Super Admin

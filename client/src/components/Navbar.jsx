@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -14,13 +14,30 @@ import {
   LogOut,
   LogIn,
   UserPlus,
-  Sparkles,
   LayoutDashboard,
 } from 'lucide-react';
+import AvatarCircle from './AvatarCircle';
 
-export default function Navbar({ activeTab, setActiveTab, currentUser, connectionStatus }) {
+export default function Navbar({ activeTab, setActiveTab }) {
   const { user, role, organization, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  // Dropdown state for individual avatar menu
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleOutsideClick(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    if (dropdownOpen) {
+      document.addEventListener('mousedown', handleOutsideClick);
+    }
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [dropdownOpen]);
 
   const getDashboardLink = () => {
     if (role === 'SUPER_ADMIN') return '/dashboard/admin';
@@ -32,6 +49,7 @@ export default function Navbar({ activeTab, setActiveTab, currentUser, connectio
     return '/dashboard/individual';
   };
 
+  // Nav items shown only for non-INDIVIDUAL roles (org admin, super admin, public)
   const navItems = [
     { id: 'home', label: 'Home', icon: Home, route: '/' },
     { id: 'feed', label: 'GreenFeed', icon: Leaf },
@@ -50,91 +68,128 @@ export default function Navbar({ activeTab, setActiveTab, currentUser, connectio
     }
   };
 
+  // Is the logged-in user an Individual citizen?
+  const isIndividual = role === 'INDIVIDUAL';
+
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 text-slate-800 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-18">
           {/* Logo & Brand */}
           <Link to="/" className="flex items-center group py-1" title="TERRA AI Home">
-            <img 
-              src="/terra-ai-logo.svg" 
-              alt="TERRA AI Logo" 
-              className="h-10 w-auto object-contain transition-transform group-hover:scale-105" 
+            <img
+              src="/terra-ai-logo.svg"
+              alt="TERRA AI Logo"
+              className="h-10 w-auto object-contain transition-transform group-hover:scale-105"
             />
           </Link>
 
-          {/* Center Nav Items */}
-          <nav className="hidden md:flex items-center gap-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleNavClick(item)}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-emerald-700 text-white shadow-sm'
-                      : item.isSpecial
-                      ? 'text-emerald-700 hover:bg-emerald-50 font-bold'
-                      : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50/80'
-                  }`}
-                >
-                  <Icon
-                    className={`w-4 h-4 ${
-                      isActive ? 'text-white' : item.isSpecial ? 'text-emerald-700' : 'text-slate-500'
+          {/* Center Nav Items — hidden for Individual citizens */}
+          {!isIndividual && (
+            <nav className="hidden md:flex items-center gap-1">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleNavClick(item)}
+                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                      isActive
+                        ? 'bg-emerald-700 text-white shadow-sm'
+                        : item.isSpecial
+                        ? 'text-emerald-700 hover:bg-emerald-50 font-bold'
+                        : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50/80'
                     }`}
-                  />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
+                  >
+                    <Icon
+                      className={`w-4 h-4 ${
+                        isActive ? 'text-white' : item.isSpecial ? 'text-emerald-700' : 'text-slate-500'
+                      }`}
+                    />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          )}
 
           {/* User Auth Section */}
           <div className="flex items-center gap-3">
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
-                {/* Role-based Dashboard button */}
-                <Link
-                  to={getDashboardLink()}
-                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-xs font-semibold text-[#133e24] shadow-xs transition"
-                >
-                  <LayoutDashboard className="w-4 h-4 text-emerald-700" />
-                  <span className="hidden sm:inline">
-                    {role === 'SUPER_ADMIN'
-                      ? 'Admin Console'
-                      : role === 'ORG_ADMIN'
-                      ? 'Org Dashboard'
-                      : 'My Dashboard'}
-                  </span>
-                </Link>
 
-                {/* Role Pill */}
-                <span
-                  className={`hidden lg:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                    role === 'SUPER_ADMIN'
-                      ? 'bg-purple-50 text-purple-700 border-purple-200'
-                      : role === 'ORG_ADMIN'
-                      ? 'bg-teal-50 text-teal-700 border-teal-200'
-                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  }`}
-                >
-                  {role === 'SUPER_ADMIN' && <ShieldCheck className="w-3 h-3" />}
-                  {role === 'ORG_ADMIN' && <Building2 className="w-3 h-3" />}
-                  {role === 'INDIVIDUAL' && <User className="w-3 h-3" />}
-                  <span>{role}</span>
-                </span>
+                <div className="relative" ref={dropdownRef}>
+                  <AvatarCircle
+                    fullName={user?.full_name}
+                    avatarUrl={user?.avatar_url}
+                    size="md"
+                    onClick={() => setDropdownOpen((prev) => !prev)}
+                  />
+                  {dropdownOpen && (
+                    <div className="absolute right-0 top-12 z-50 w-52 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl animate-in fade-in slide-in-from-top-2 duration-150">
+                      <div className="border-b border-slate-100 bg-emerald-50/60 px-4 py-3">
+                        <p className="truncate text-sm font-bold text-slate-900">{user?.full_name || 'Terra member'}</p>
+                        <p className="truncate text-xs text-slate-500">{user?.email}</p>
+                      </div>
+                      <Link
+                        to="/profile"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-emerald-50 hover:text-emerald-700"
+                      >
+                        <User className="h-4 w-4" /><span>My Profile</span>
+                      </Link>
+                      <Link
+                        to={getDashboardLink()}
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-emerald-50 hover:text-emerald-700"
+                      >
+                        <LayoutDashboard className="h-4 w-4" /><span>Dashboard</span>
+                      </Link>
+                      <div className="border-t border-slate-100" />
+                      <button
+                        onClick={() => { setDropdownOpen(false); logout(); }}
+                        className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2.5 text-sm text-rose-600 transition hover:bg-rose-50"
+                      >
+                        <LogOut className="h-4 w-4" /><span>Sign Out</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {!isIndividual && (
+                  <>
+                    <Link
+                      to={getDashboardLink()}
+                      className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-xs font-semibold text-[#133e24] shadow-xs transition"
+                    >
+                      <LayoutDashboard className="w-4 h-4 text-emerald-700" />
+                      <span className="hidden sm:inline">
+                        {role === 'SUPER_ADMIN'
+                          ? 'Admin Console'
+                          : role === 'ORG_ADMIN'
+                          ? 'Org Dashboard'
+                          : 'My Dashboard'}
+                      </span>
+                    </Link>
 
-                {/* User Name & Logout */}
-                <button
-                  onClick={logout}
-                  title="Sign out of Terra AI"
-                  className="flex items-center gap-1.5 p-2 rounded-xl text-slate-500 hover:text-rose-500 hover:bg-rose-50 transition cursor-pointer"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span className="text-xs hidden md:inline">Sign Out</span>
-                </button>
+                    {/* Role Pill */}
+                    <span
+                      className={`hidden lg:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                        role === 'SUPER_ADMIN'
+                          ? 'bg-purple-50 text-purple-700 border-purple-200'
+                          : role === 'ORG_ADMIN'
+                          ? 'bg-teal-50 text-teal-700 border-teal-200'
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      }`}
+                    >
+                      {role === 'SUPER_ADMIN' && <ShieldCheck className="w-3 h-3" />}
+                      {role === 'ORG_ADMIN' && <Building2 className="w-3 h-3" />}
+                      {role === 'INDIVIDUAL' && <User className="w-3 h-3" />}
+                      <span>{role}</span>
+                    </span>
+
+                  </>
+                )}
               </div>
             ) : (
               <div className="flex items-center gap-2.5">
@@ -158,25 +213,27 @@ export default function Navbar({ activeTab, setActiveTab, currentUser, connectio
           </div>
         </div>
 
-        {/* Mobile Navigation Bar */}
-        <div className="flex md:hidden items-center justify-around py-2 border-t border-slate-200 overflow-x-auto gap-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleNavClick(item)}
-                className={`flex flex-col items-center py-1 px-2.5 rounded-lg text-xs font-medium ${
-                  isActive ? 'text-emerald-700 font-bold' : 'text-slate-500'
-                }`}
-              >
-                <Icon className="w-4 h-4 mb-0.5" />
-                <span className="text-[10px]">{item.label.split(' ')[0]}</span>
-              </button>
-            );
-          })}
-        </div>
+        {/* Mobile Navigation Bar — hidden for Individual citizens */}
+        {!isIndividual && (
+          <div className="flex md:hidden items-center justify-around py-2 border-t border-slate-200 overflow-x-auto gap-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleNavClick(item)}
+                  className={`flex flex-col items-center py-1 px-2.5 rounded-lg text-xs font-medium ${
+                    isActive ? 'text-emerald-700 font-bold' : 'text-slate-500'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 mb-0.5" />
+                  <span className="text-[10px]">{item.label.split(' ')[0]}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </header>
   );

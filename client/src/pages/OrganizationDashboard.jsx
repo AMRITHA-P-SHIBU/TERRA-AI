@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -22,14 +22,15 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
-  Filter,
   Check,
   Lock,
   User,
 } from 'lucide-react';
+import PostRequestsPanel from '../components/PostRequestsPanel';
 
 export default function OrganizationDashboard() {
   const { user, organization, membership } = useAuth();
+  const [showPostRequests, setShowPostRequests] = useState(false);
 
   const [members, setMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
@@ -343,6 +344,17 @@ export default function OrganizationDashboard() {
     return excelRows;
   }, [excelRows, excelFilter]);
 
+  if (showPostRequests) {
+    return (
+      <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+        <button onClick={() => setShowPostRequests(false)} className="text-sm font-semibold text-slate-500 hover:text-teal-700">← Back to organization dashboard</button>
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+          <PostRequestsPanel />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Hidden File Input for Excel/CSV */}
@@ -419,6 +431,15 @@ export default function OrganizationDashboard() {
 
           {/* Quick Admin Actions: Add Members Button */}
           <div className="shrink-0 flex items-center gap-3">
+            {membership?.role === 'ORG_ADMIN' && (
+              <button
+                onClick={() => setShowPostRequests(true)}
+                className="px-4 py-2.5 rounded-xl border border-teal-200 bg-white hover:bg-teal-50 text-teal-800 font-bold text-xs sm:text-sm shadow-sm flex items-center gap-2 transition"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Post Requests</span>
+              </button>
+            )}
             <button
               onClick={() => {
                 setAddError(null);

@@ -4,13 +4,16 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { GoogleGenAI } from '@google/genai';
-import { supabase, checkSupabaseConnection } from './supabase.js';
+import { supabase, supabaseAdmin, checkSupabaseConnection } from './supabase.js';
 import { testConnection } from './config/database.js';
+import { authenticate } from './middleware/authenticate.js';
+import { resolveProfileScope } from './services/profileScope.js';
 
 // Route imports
 import authRoutes from './routes/authRoutes.js';
 import organizationRoutes from './routes/organizationRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import socialRoutes from './routes/socialRoutes.js';
 import { seedSuperAdmin } from './scripts/seedSuperAdmin.js';
 
 export const app = express();
@@ -108,6 +111,7 @@ app.get('/api/stats/public', async (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api', socialRoutes);
 
 // -------------------------------------------------------------
 // Existing Terra AI Services (AI Assistant, GreenFeed, Marketplace)
@@ -178,52 +182,95 @@ app.post('/api/posts', async (req, res) => {
   res.status(201).json({ post: data[0] });
 });
 
-app.get('/api/marketplace', async (_req, res) => {
-  if (!supabase) return res.json({ items: [] });
-  const { data, error } = await supabase
-    .from('marketplace_items')
-    .select('*, profiles(username, full_name, avatar_url)')
-    .eq('status', 'approved')
-    .order('created_at', { ascending: false });
+app.get('/api/marketplace', authenticate, async (req, res) => {
+  try {
+    if (!supabaseAdmin) return res.status(503).json({ error: 'Supabase is not configured.' });
+    const scope = await resolveProfileScope(req.user.id);
+    if (!scope) return res.status(403).json({ error: 'An active user profile is required.' });
 
-  if (error) return res.status(500).json({ error: error.message });
-  res.json({ items: data });
+    const applyScope = (builder) => {
+      const scoped = builder.eq('author_scope', scope.authorScope);
+      return scope.organizationId ? scoped.eq('organization_id', scope.organizationId) : scoped.is('organization_id', null);
+    };
+    const [approved, own] = await Promise.all([
+      applyScope(supabaseAdmin.from('marketplace_items').select('*').eq('status', 'approved'))
+        .order('created_at', { ascending: false }),
+      applyScope(supabaseAdmin.from('marketplace_items').select('*').eq('user_id', req.user.id))
+        .order('created_at', { ascending: false }),
+    ]);
+    if (approved.error) throw new Error(approved.error.message);
+    if (own.error) throw new Error(own.error.message);
+
+    const byId = new Map([...(approved.data || []), ...(own.data || [])].map((item) => [item.id, item]));
+    const items = [...byId.values()].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const userIds = [...new Set(items.map((item) => item.user_id))];
+    const { data: authors, error: authorsError } = userIds.length
+      ? await supabaseAdmin.from('users').select('id, full_name, email').in('id', userIds)
+      : { data: [], error: null };
+    if (authorsError) throw new Error(authorsError.message);
+    const authorMap = new Map((authors || []).map((author) => [author.id, author]));
+    return res.json({
+      items: items.map((item) => {
+        const author = authorMap.get(item.user_id);
+        return { ...item, profiles: author ? { full_name: author.full_name, username: author.email } : null };
+      }),
+    });
+  } catch (error) {
+    console.error('[Marketplace Feed Error]:', error);
+    return res.status(500).json({ error: 'Failed to load scoped marketplace activities.' });
+  }
 });
 
-app.post('/api/marketplace', async (req, res) => {
-  if (!supabase) return res.status(503).json({ error: 'Supabase not connected' });
-  const { user_id, title, description, category, listing_type, price, location, image_url } = req.body;
-  const { data, error } = await supabase
-    .from('marketplace_items')
-    .insert([
-      {
-        user_id,
-        title,
-        description,
-        category,
-        listing_type,
-        price: listing_type === 'sell' ? price : 0,
-        location,
-        image_url,
-        status: 'pending',
-      },
-    ])
-    .select();
-
-  if (error) return res.status(500).json({ error: error.message });
-  res.status(201).json({ item: data[0] });
+app.post('/api/marketplace', authenticate, async (req, res) => {
+  try {
+    if (!supabaseAdmin) return res.status(503).json({ error: 'Supabase is not configured.' });
+    const scope = await resolveProfileScope(req.user.id);
+    if (!scope) return res.status(403).json({ error: 'An active user profile is required.' });
+    const { title, description, category, listing_type, price, location, image_url } = req.body;
+    const { data, error } = await supabaseAdmin.from('marketplace_items').insert({
+      user_id: req.user.id,
+      author_scope: scope.authorScope,
+      organization_id: scope.organizationId,
+      title,
+      description,
+      category,
+      listing_type,
+      price: listing_type === 'sell' ? price : 0,
+      location,
+      image_url,
+      status: 'pending',
+    }).select().single();
+    if (error) throw new Error(error.message);
+    return res.status(201).json({ item: data });
+  } catch (error) {
+    console.error('[Create Marketplace Item Error]:', error);
+    return res.status(500).json({ error: 'Failed to create marketplace activity.' });
+  }
 });
 
-app.post('/api/carbon-logs', async (req, res) => {
-  if (!supabase) return res.status(503).json({ error: 'Supabase not connected' });
-  const { user_id, transport_km, transport_mode, electricity_kwh, waste_kg, diet_type, total_co2e_kg } = req.body;
-  const { data, error } = await supabase
-    .from('carbon_logs')
-    .insert([{ user_id, transport_km, transport_mode, electricity_kwh, waste_kg, diet_type, total_co2e_kg }])
-    .select();
-
-  if (error) return res.status(500).json({ error: error.message });
-  res.status(201).json({ log: data[0] });
+app.post('/api/carbon-logs', authenticate, async (req, res) => {
+  try {
+    if (!supabaseAdmin) return res.status(503).json({ error: 'Supabase is not configured.' });
+    const scope = await resolveProfileScope(req.user.id);
+    if (!scope) return res.status(403).json({ error: 'An active user profile is required.' });
+    const { transport_km, transport_mode, electricity_kwh, waste_kg, diet_type, total_co2e_kg } = req.body;
+    const { data, error } = await supabaseAdmin.from('carbon_logs').insert({
+      user_id: req.user.id,
+      author_scope: scope.authorScope,
+      organization_id: scope.organizationId,
+      transport_km,
+      transport_mode,
+      electricity_kwh,
+      waste_kg,
+      diet_type,
+      total_co2e_kg,
+    }).select().single();
+    if (error) throw new Error(error.message);
+    return res.status(201).json({ log: data });
+  } catch (error) {
+    console.error('[Create Carbon Log Error]:', error);
+    return res.status(500).json({ error: 'Failed to create carbon activity.' });
+  }
 });
 
 // Global 404 handler for API routes
@@ -234,6 +281,12 @@ app.use((_req, res) => {
 // Global Error Handler
 app.use((err, _req, res, _next) => {
   console.error('[Unhandled Server Error]:', err);
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(413).json({ error: 'Uploaded media exceeds the 50 MB limit.' });
+  }
+  if (err.code === 'LIMIT_FILE_COUNT') {
+    return res.status(400).json({ error: 'Upload one media file at a time.' });
+  }
   if (err.message && err.message.includes('Invalid file type')) {
     return res.status(400).json({ error: err.message });
   }

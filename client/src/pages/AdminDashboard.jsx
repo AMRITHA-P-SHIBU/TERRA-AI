@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
   Shield,
-  ShieldCheck,
   Building2,
   Users,
   CheckCircle,
@@ -11,22 +10,19 @@ import {
   FileText,
   Clock,
   History,
-  Eye,
   RefreshCw,
   Search,
-  Filter,
   Check,
   X,
   Loader2,
   ExternalLink,
-  ChevronRight,
-  ShieldAlert,
 } from 'lucide-react';
+import PostRequestsPanel from '../components/PostRequestsPanel';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
 
-  const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'organizations' | 'users' | 'logs'
+  const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'post-requests' | 'organizations' | 'users' | 'logs'
 
   // Data states
   const [pendingOrgs, setPendingOrgs] = useState([]);
@@ -315,6 +311,18 @@ export default function AdminDashboard() {
           </button>
 
           <button
+            onClick={() => setActiveTab('post-requests')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'post-requests'
+                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>Post Requests</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('organizations')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'organizations'
@@ -377,6 +385,12 @@ export default function AdminDashboard() {
           >
             <X className="w-4 h-4" />
           </button>
+        </div>
+      )}
+
+      {activeTab === 'post-requests' && (
+        <div className="rounded-3xl border border-slate-800 bg-white p-5 shadow-sm sm:p-7">
+          <PostRequestsPanel />
         </div>
       )}
 

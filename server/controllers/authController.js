@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { z } from 'zod';
 import { query, getClient } from '../config/database.js';
+import { supabaseAdmin } from '../supabase.js';
 import { generateTokens, setAuthCookies, clearAuthCookies } from '../middleware/authenticate.js';
 import {
   sendVerificationEmail,
@@ -48,6 +49,83 @@ const loginSchema = z.object({
   expectedRole: z.enum(['INDIVIDUAL', 'ORG_ADMIN', 'SUPER_ADMIN']).optional(),
 });
 
+async function ensureLoginProfile(user, organizationMembership) {
+  if (!supabaseAdmin) {
+    const missing = [];
+    if (!process.env.SUPABASE_URL) missing.push('SUPABASE_URL');
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) missing.push('SUPABASE_SERVICE_ROLE_KEY');
+    console.warn(`[Login] Skipping profile verification because server profile storage is not configured. Missing: ${missing.join(', ')}`);
+    return;
+  }
+
+  const [individualResult, organizationResult] = await Promise.all([
+    supabaseAdmin.from('individual_users').select('id').eq('id', user.id).maybeSingle(),
+    supabaseAdmin.from('organization_users').select('id').eq('id', user.id).maybeSingle(),
+  ]);
+  if (individualResult.error || organizationResult.error) {
+    const profileError = new Error(
+      `Unable to check account profiles: ${individualResult.error?.message || organizationResult.error?.message}`
+    );
+    profileError.statusCode = 503;
+    profileError.publicMessage = 'Account profile storage is unavailable. Confirm SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are for the same project, and run server/migrations/004_social_profiles_and_posts.sql in that project.';
+    throw profileError;
+  }
+
+  if (user.account_type === 'SUPER_ADMIN' || organizationResult.data) return;
+
+  if (organizationMembership) {
+    const { error } = await supabaseAdmin.from('organization_users').upsert({
+      id: user.id,
+      organization_id: organizationMembership.organization_id,
+      full_name: user.full_name,
+      email: user.email,
+      role: organizationMembership.member_role,
+      status: organizationMembership.member_status,
+      created_at: user.created_at,
+    }, { onConflict: 'id' });
+    if (error) {
+      const profileError = new Error(`Unable to initialize your organization profile: ${error.message}`);
+      profileError.statusCode = 503;
+      profileError.publicMessage = 'Unable to initialize your account profile. Confirm the profile tables exist by running server/migrations/004_social_profiles_and_posts.sql in the configured Supabase project.';
+      profileError.cause = error;
+      throw profileError;
+    }
+    return;
+  }
+
+  if (individualResult.data) {
+    if (user.account_type === 'INDIVIDUAL') return;
+    const error = new Error('Your organization profile is missing and no organization membership exists. Please contact support.');
+    error.statusCode = 409;
+    error.publicMessage = error.message;
+    throw error;
+  }
+
+  if (user.account_type === 'ORG_ADMIN') {
+    const error = new Error('Your organization profile is missing and no organization membership exists. Please contact support.');
+    error.statusCode = 409;
+    error.publicMessage = error.message;
+    throw error;
+  }
+
+  if (user.account_type === 'INDIVIDUAL') {
+    const { error } = await supabaseAdmin.from('individual_users').upsert({
+      id: user.id,
+      full_name: user.full_name,
+      email: user.email,
+      status: user.status,
+      created_at: user.created_at,
+    }, { onConflict: 'id' });
+    if (error) {
+      const profileError = new Error(`Unable to initialize your individual profile: ${error.message}`);
+      profileError.statusCode = 503;
+      profileError.publicMessage = 'Unable to initialize your account profile. Confirm the profile tables exist by running server/migrations/004_social_profiles_and_posts.sql in the configured Supabase project.';
+      profileError.cause = error;
+      throw profileError;
+    }
+  }
+}
+
 /**
  * 1. Individual User Self-Registration
  */
@@ -61,12 +139,15 @@ export async function signupIndividual(req, res) {
       });
     }
 
-    const { full_name, email, password } = parseResult.data;
+    const { full_name, email, password, location } = parseResult.data;
 
     // Check if email already registered
     const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
     if (existing.rows.length > 0) {
       return res.status(409).json({ error: 'An account with this email address already exists' });
+    }
+    if (!supabaseAdmin) {
+      return res.status(503).json({ error: 'Supabase profile storage is not configured.' });
     }
 
     // Hash password
@@ -82,6 +163,16 @@ export async function signupIndividual(req, res) {
     );
 
     const user = insertResult.rows[0];
+
+    const { error: profileError } = await supabaseAdmin.from('individual_users').insert({
+      id: user.id,
+      full_name,
+      email,
+      location: location || null,
+      status: user.status,
+      created_at: user.created_at,
+    });
+    if (profileError) throw new Error(`Account profile creation failed: ${profileError.message}`);
 
     // Create email verification token
     const verifyToken = crypto.randomBytes(32).toString('hex');
@@ -138,6 +229,9 @@ export async function signupOrganization(req, res) {
 
     const data = parseResult.data;
     const documentFilename = req.file ? req.file.filename : null;
+    if (!supabaseAdmin) {
+      return res.status(503).json({ error: 'Supabase profile storage is not configured.' });
+    }
 
     // Check if representative email or official org email exists in users
     const existingUser = await query('SELECT id FROM users WHERE email = $1', [data.representative_email]);
@@ -194,6 +288,17 @@ export async function signupOrganization(req, res) {
       [organization.id, user.id, 'ORG_ADMIN', 'ACTIVE']
     );
     const membership = memberRes.rows[0];
+
+    const { error: profileError } = await supabaseAdmin.from('organization_users').insert({
+      id: user.id,
+      organization_id: organization.id,
+      full_name: user.full_name,
+      email: user.email,
+      role: 'ORG_ADMIN',
+      status: membership.status,
+      created_at: user.created_at,
+    });
+    if (profileError) throw new Error(`Organization profile creation failed: ${profileError.message}`);
 
     if (client.query && typeof client.query === 'function') {
       try {
@@ -349,6 +454,7 @@ export async function login(req, res) {
 
     let organization = null;
     let membership = null;
+    let organizationMembership = null;
 
     // If ORG_ADMIN or MEMBER, fetch organization details
     if (user.account_type === 'ORG_ADMIN' || user.account_type === 'INDIVIDUAL') {
@@ -366,6 +472,7 @@ export async function login(req, res) {
 
       if (orgRes.rows.length > 0) {
         const row = orgRes.rows[0];
+        organizationMembership = row;
         organization = {
           id: row.organization_id,
           name: row.organization_name,
@@ -382,6 +489,8 @@ export async function login(req, res) {
       }
     }
 
+    await ensureLoginProfile(userRecord, organizationMembership);
+
     // Generate JWT & set cookies
     const tokens = generateTokens(user);
     setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
@@ -395,7 +504,10 @@ export async function login(req, res) {
     });
   } catch (error) {
     console.error('[Login Error]:', error);
-    return res.status(500).json({ error: 'Authentication service encountered an error' });
+    if (res.headersSent) return;
+    return res.status(error.statusCode || 500).json({
+      error: error.publicMessage || 'Authentication service encountered an error',
+    });
   }
 }
 
@@ -418,6 +530,16 @@ export async function logout(req, res) {
 export async function getMe(req, res) {
   try {
     const user = req.user;
+    const safeUser = {
+      id: user.id,
+      full_name: user.full_name,
+      email: user.email,
+      account_type: user.account_type,
+      status: user.status,
+      email_verified: user.email_verified,
+      must_change_password: Boolean(user.must_change_password),
+      created_at: user.created_at,
+    };
     let organization = null;
     let membership = null;
 
@@ -468,7 +590,7 @@ export async function getMe(req, res) {
     };
 
     return res.json({
-      user,
+      user: safeUser,
       organization,
       membership,
       permissions,

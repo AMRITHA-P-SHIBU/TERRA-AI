@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { query } from '../config/database.js';
-import { supabase, supabaseAdmin } from '../supabase.js';
+import { supabaseAdmin } from '../supabase.js';
 import { sendMemberInvitationEmail } from '../services/emailService.js';
 
 const memberSchema = z.object({
@@ -26,7 +26,7 @@ const bulkMemberSchema = z.object({
 /**
  * Helper to create or link a single member to an organization
  */
-export async function processMemberCreation({ orgId, email, fullName, password, role = 'MEMBER' }) {
+export async function processMemberCreation({ orgId, email, fullName, password, role = 'MEMBER', addedBy = null }) {
   const cleanEmail = email.trim().toLowerCase();
   const cleanRole = role === 'ORG_ADMIN' ? 'ORG_ADMIN' : 'MEMBER';
   const defaultPassword = password && password.trim().length >= 6 ? password.trim() : 'Sjcet@123#';
@@ -37,19 +37,36 @@ export async function processMemberCreation({ orgId, email, fullName, password, 
 
   if (userRes.rows.length > 0) {
     const existingUser = userRes.rows[0];
+    if (existingUser.account_type !== 'INDIVIDUAL') {
+      return {
+        status: 'skipped',
+        email: cleanEmail,
+        fullName: existingUser.full_name,
+        reason: 'Only individual accounts can be added as organization members',
+      };
+    }
 
-    // Check if already a member of this organization
-    const memberRes = await query(
-      'SELECT id, role, status FROM organization_members WHERE organization_id = $1 AND user_id = $2',
-      [orgId, existingUser.id]
-    );
+    if (!supabaseAdmin) throw new Error('Supabase profile storage is not configured.');
+    const { data: memberships, error: membershipsError } = await supabaseAdmin
+      .from('organization_members')
+      .select('organization_id')
+      .eq('user_id', existingUser.id);
+    if (membershipsError) throw new Error(membershipsError.message);
 
-    if (memberRes.rows.length > 0) {
+    if (memberships?.some((membership) => membership.organization_id === orgId)) {
       return {
         status: 'skipped',
         email: cleanEmail,
         fullName: existingUser.full_name,
         reason: 'User is already a member of this organization',
+      };
+    }
+    if (memberships?.length) {
+      return {
+        status: 'skipped',
+        email: cleanEmail,
+        fullName: existingUser.full_name,
+        reason: 'User already belongs to another organization',
       };
     }
 
@@ -59,6 +76,23 @@ export async function processMemberCreation({ orgId, email, fullName, password, 
        VALUES ($1, $2, $3, 'ACTIVE')`,
       [orgId, existingUser.id, cleanRole]
     );
+
+    const { error: profileError } = await supabaseAdmin.from('organization_users').upsert({
+      id: existingUser.id,
+      organization_id: orgId,
+      full_name: existingUser.full_name,
+      email: existingUser.email,
+      role: cleanRole,
+      status: 'ACTIVE',
+      added_by: addedBy,
+    }, { onConflict: 'id' });
+    if (profileError) throw new Error(profileError.message);
+
+    const { error: individualDeleteError } = await supabaseAdmin
+      .from('individual_users')
+      .delete()
+      .eq('id', existingUser.id);
+    if (individualDeleteError) throw new Error(individualDeleteError.message);
 
     return {
       status: 'added',
@@ -71,26 +105,8 @@ export async function processMemberCreation({ orgId, email, fullName, password, 
     };
   }
 
-  // 2. User does not exist in users table -> Create user
-  // Try Supabase Auth Admin createUser if supabaseAdmin is configured
-  if (supabaseAdmin) {
-    try {
-      const { error: authErr } = await supabaseAdmin.auth.admin.createUser({
-        email: cleanEmail,
-        password: defaultPassword,
-        email_confirm: true,
-        user_metadata: {
-          full_name: name,
-          must_change_password: true,
-        },
-      });
-      if (authErr) {
-        console.warn(`[Supabase Auth Admin warning for ${cleanEmail}]:`, authErr.message);
-      }
-    } catch (authException) {
-      console.warn(`[Supabase Auth Admin exception for ${cleanEmail}]:`, authException.message);
-    }
-  }
+  // 2. User does not exist in users table -> Create a cookie-auth account.
+  if (!supabaseAdmin) throw new Error('Supabase profile storage is not configured.');
 
   // Hash password using bcrypt
   const salt = await bcrypt.genSalt(12);
@@ -106,26 +122,23 @@ export async function processMemberCreation({ orgId, email, fullName, password, 
 
   const newUser = insertUserRes.rows[0];
 
-  // Upsert profile if profiles table is configured in Supabase
-  if (supabase) {
-    try {
-      await supabase.from('profiles').upsert({
-        id: newUser.id,
-        username: cleanEmail.split('@')[0],
-        full_name: name,
-        role: 'user',
-      });
-    } catch {
-      // profiles table might be optional or auto-managed
-    }
-  }
-
   // Insert into organization_members
   await query(
     `INSERT INTO organization_members (organization_id, user_id, role, status)
      VALUES ($1, $2, $3, 'ACTIVE')`,
     [orgId, newUser.id, cleanRole]
   );
+
+  const { error: profileError } = await supabaseAdmin.from('organization_users').insert({
+    id: newUser.id,
+    organization_id: orgId,
+    full_name: name,
+    email: cleanEmail,
+    role: cleanRole,
+    status: 'ACTIVE',
+    added_by: addedBy,
+  });
+  if (profileError) throw new Error(profileError.message);
 
   return {
     status: 'added',
@@ -215,6 +228,7 @@ export async function addMember(req, res) {
       fullName,
       password,
       role,
+      addedBy: req.user.id,
     });
 
     if (result.status === 'skipped') {
@@ -267,6 +281,7 @@ export async function addMembersBulk(req, res) {
           fullName: item.fullName,
           password: item.password,
           role: item.role || 'MEMBER',
+          addedBy: req.user.id,
         });
 
         if (result.status === 'added') {
@@ -317,29 +332,23 @@ export async function inviteMember(req, res) {
     const orgId = req.organization.id;
 
     // Check if user already exists
-    const userRes = await query('SELECT id, full_name, email FROM users WHERE email = $1', [email.toLowerCase().trim()]);
+    const userRes = await query('SELECT id FROM users WHERE email = $1', [email.toLowerCase().trim()]);
 
     let targetUserId = null;
+    const cleanRole = role === 'ORG_ADMIN' ? 'ORG_ADMIN' : 'MEMBER';
 
     if (userRes.rows.length > 0) {
-      targetUserId = userRes.rows[0].id;
+      const membershipResult = await processMemberCreation({
+        orgId,
+        email,
+        role: cleanRole,
+        addedBy: req.user.id,
+      });
 
-      // Check if already a member
-      const existingMember = await query(
-        'SELECT id, role, status FROM organization_members WHERE organization_id = $1 AND user_id = $2',
-        [orgId, targetUserId]
-      );
-
-      if (existingMember.rows.length > 0) {
-        return res.status(409).json({ error: 'User is already a member or invited to this organization' });
+      if (membershipResult.status === 'skipped') {
+        return res.status(409).json({ error: membershipResult.reason });
       }
-
-      // Add to organization_members with status ACTIVE
-      await query(
-        `INSERT INTO organization_members (organization_id, user_id, role, status)
-         VALUES ($1, $2, $3, 'ACTIVE')`,
-        [orgId, targetUserId, role || 'MEMBER']
-      );
+      targetUserId = membershipResult.userId;
     }
 
     // Create an invitation token
@@ -352,7 +361,7 @@ export async function inviteMember(req, res) {
       [
         targetUserId || req.user.id,
         inviteToken,
-        JSON.stringify({ email, organization_id: orgId, role: role || 'MEMBER' }),
+        JSON.stringify({ email, organization_id: orgId, role: cleanRole }),
         expiresAt,
       ]
     );
@@ -368,7 +377,7 @@ export async function inviteMember(req, res) {
       message: `Invitation successfully sent to ${email}`,
       invitation: {
         email,
-        role: role || 'MEMBER',
+        role: cleanRole,
         organization: req.organization.name,
         expires_at: expiresAt,
       },

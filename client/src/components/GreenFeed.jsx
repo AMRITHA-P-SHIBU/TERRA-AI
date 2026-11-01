@@ -1,378 +1,105 @@
-import React, { useState } from 'react';
-import { 
-  Heart, 
-  MessageCircle, 
-  Share2, 
-  PlusCircle, 
-  ShieldCheck, 
-  Sparkles, 
-  MapPin, 
-  Image as ImageIcon, 
-  Check, 
-  Tag,
-  Filter
-} from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AlertCircle, Heart, Image as ImageIcon, LoaderCircle, MessageCircle, Plus, RefreshCw } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { PostDetailModal } from '../pages/ProfilePage';
+import { getFeed } from '../services/profileService';
 
-export default function GreenFeed({ posts, setPosts, currentUser }) {
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newPost, setNewPost] = useState({
-    caption: '',
-    category: 'tree_planting',
-    categoryLabel: 'Tree Planting',
-    image: '',
-    location: currentUser.location || 'Local Community'
-  });
-  const [successNotice, setSuccessNotice] = useState('');
+export default function GreenFeed() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [selectedPostId, setSelectedPostId] = useState(null);
+  const [notice, setNotice] = useState('');
 
-  const categories = [
-    { id: 'all', label: 'All Activities' },
-    { id: 'tree_planting', label: 'Tree Planting 🌳' },
-    { id: 'waste_cleanup', label: 'Waste Cleanup 🧹' },
-    { id: 'recycling', label: 'Recycling ♻️' },
-    { id: 'upcycling', label: 'Upcycling 🎨' },
-    { id: 'organic_gardening', label: 'Gardening 🪴' },
-    { id: 'sustainable_transport', label: 'Green Travel 🚲' }
-  ];
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      setPosts(await getFeed());
+    } catch (loadError) {
+      setError(loadError.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const handleLike = (postId) => {
-    setPosts(prev => prev.map(p => {
-      if (p.id === postId) {
-        return {
-          ...p,
-          isLiked: !p.isLiked,
-          likesCount: p.isLiked ? p.likesCount - 1 : p.likesCount + 1
-        };
-      }
-      return p;
-    }));
+  useEffect(() => {
+    let active = true;
+    getFeed()
+      .then((feedPosts) => { if (active) setPosts(feedPosts); })
+      .catch((loadError) => { if (active) setError(loadError.message); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  const notify = (message) => {
+    setNotice(message);
+    window.setTimeout(() => setNotice(''), 3500);
   };
 
-  const handleCreatePost = (e) => {
-    e.preventDefault();
-    if (!newPost.caption.trim()) return;
-
-    const catObj = categories.find(c => c.id === newPost.category);
-
-    const postObj = {
-      id: `post-${Date.now()}`,
-      author: {
-        name: currentUser.fullName,
-        username: currentUser.username,
-        avatar: currentUser.avatar,
-        badge: currentUser.levelTitle
-      },
-      category: newPost.category,
-      categoryLabel: catObj ? catObj.label.split(' ')[0] : 'Eco Action',
-      caption: newPost.caption,
-      image: newPost.image || 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=800&q=80',
-      ecoPointsAwarded: 25,
-      likesCount: 1,
-      isLiked: true,
-      commentsCount: 0,
-      status: 'approved', // In full DB mode: 'pending' -> approved by admin
-      createdAt: 'Just now',
-      location: newPost.location
-    };
-
-    setPosts([postObj, ...posts]);
-    setIsModalOpen(false);
-    setNewPost({
-      caption: '',
-      category: 'tree_planting',
-      categoryLabel: 'Tree Planting',
-      image: '',
-      location: currentUser.location || 'Local Community'
-    });
-    setSuccessNotice('🎉 Your eco action has been published! +25 EcoPoints added.');
-    setTimeout(() => setSuccessNotice(''), 5000);
+  const removePost = (postId) => {
+    setPosts((current) => current.filter((post) => post.id !== postId));
   };
-
-  const filteredPosts = selectedCategory === 'all'
-    ? posts
-    : posts.filter(p => p.category === selectedCategory);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      {/* Banner / Header */}
-      <div className="bg-gradient-to-r from-emerald-800 to-teal-800 rounded-3xl p-6 md:p-8 text-white shadow-xl shadow-emerald-950/10 mb-8 relative overflow-hidden">
-        <div className="absolute right-0 bottom-0 opacity-10 pointer-events-none transform translate-x-8 translate-y-8">
-          <span className="text-9xl">🌿</span>
-        </div>
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div className="mx-auto max-w-4xl px-4 py-8">
+      {selectedPostId && <PostDetailModal postId={selectedPostId} currentUserId={user?.id} onClose={() => { setSelectedPostId(null); load(); }} onDeleted={removePost} notify={notify} />}
+      <header className="relative mb-7 overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-800 to-teal-800 p-6 text-white shadow-xl md:p-8">
+        <div className="pointer-events-none absolute -bottom-8 right-0 translate-x-6 text-9xl opacity-10">🌿</div>
+        <div className="relative flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
           <div className="max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/30 text-emerald-200 text-xs font-semibold backdrop-blur-xs mb-3 border border-emerald-400/20">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>GreenFeed Social Community</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Inspire change. Share your green milestones.
-            </h1>
-            <p className="mt-2 text-emerald-100 text-sm leading-relaxed">
-              Every tree planted, plastic item recycled, and compost cycle completed creates a cleaner community. Share what you did today and earn EcoPoints.
-            </p>
+            <p className="mb-2 inline-flex rounded-full border border-emerald-300/20 bg-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-100">GreenFeed Social Community</p>
+            <h1 className="text-2xl font-black tracking-tight sm:text-3xl">Inspire change. Share green milestones.</h1>
+            <p className="mt-2 text-sm leading-relaxed text-emerald-100">Approved actions from your community. Individual accounts and organization communities stay separate.</p>
           </div>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="self-start md:self-auto inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-white text-emerald-900 font-bold text-sm hover:bg-emerald-50 hover:shadow-lg hover:scale-105 transition-all shadow-md shrink-0 cursor-pointer"
-          >
-            <PlusCircle className="w-5 h-5 text-emerald-600" />
-            <span>Share Eco Action</span>
+          <button onClick={() => navigate('/profile')} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-emerald-900 shadow hover:bg-emerald-50">
+            <Plus className="h-5 w-5" /> Create a post
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* Success Notification */}
-      {successNotice && (
-        <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center gap-3 animate-fade-in shadow-xs">
-          <div className="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-sm">
-            <Check className="w-4 h-4" />
-          </div>
-          <span className="text-sm font-semibold">{successNotice}</span>
+      {notice && <p role="status" className="mb-4 rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">{notice}</p>}
+      {error && <div role="alert" className="mb-5 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800"><AlertCircle className="h-4 w-4" />{error}<button onClick={load} className="ml-auto font-bold underline">Retry</button></div>}
+
+      {loading ? (
+        <div className="space-y-5">{[1, 2].map((item) => <div key={item} className="h-[28rem] animate-pulse rounded-3xl bg-slate-200" />)}</div>
+      ) : posts.length === 0 ? (
+        <div className="rounded-3xl border-2 border-dashed border-slate-200 bg-white px-5 py-16 text-center">
+          <ImageIcon className="mx-auto mb-3 h-11 w-11 text-emerald-300" />
+          <h2 className="font-bold text-slate-800">No approved posts in your feed yet</h2>
+          <p className="mt-1 text-sm text-slate-500">Approved community posts will appear here.</p>
         </div>
-      )}
-
-      {/* Category Filter Chips */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none">
-        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 px-2 uppercase tracking-wider shrink-0">
-          <Filter className="w-3.5 h-3.5" />
-          <span>Filter:</span>
-        </div>
-        {categories.map(cat => (
-          <button
-            key={cat.id}
-            onClick={() => setSelectedCategory(cat.id)}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all shrink-0 cursor-pointer ${
-              selectedCategory === cat.id
-                ? 'bg-emerald-700 text-white shadow-xs'
-                : 'bg-white border border-slate-200 text-slate-600 hover:border-emerald-300 hover:text-emerald-700'
-            }`}
-          >
-            {cat.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Posts Stream */}
-      <div className="space-y-6">
-        {filteredPosts.map(post => (
-          <article 
-            key={post.id}
-            className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-md transition-shadow"
-          >
-            {/* Post Author Bar */}
-            <div className="p-5 flex items-center justify-between border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <img
-                  src={post.author.avatar}
-                  alt={post.author.name}
-                  className="w-11 h-11 rounded-full object-cover ring-2 ring-emerald-100"
-                />
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-slate-900 text-sm">{post.author.name}</h3>
-                    <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
-                      {post.author.badge}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-slate-400 mt-0.5">
-                    <span>@{post.author.username}</span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3 text-slate-400" />
-                      {post.location}
-                    </span>
-                    <span>•</span>
-                    <span>{post.createdAt}</span>
-                  </div>
+      ) : (
+        <div className="space-y-5">
+          {posts.map((post) => (
+            <article key={post.id} className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+              <button onClick={() => setSelectedPostId(post.id)} className="flex w-full items-center gap-3 p-4 text-left sm:p-5">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 font-black text-white shadow-[0_0_16px_2px_rgba(52,211,153,0.2)]">{(post.author_name || '?').charAt(0).toUpperCase()}</div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-extrabold text-slate-900">{post.author_name}</p>
+                  <p className="text-xs text-slate-500">{new Date(post.created_at).toLocaleString()}</p>
                 </div>
-              </div>
-
-              {/* EcoPoints Badge & Status */}
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-800 font-bold text-xs border border-emerald-200">
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>+{post.ecoPointsAwarded} pts</span>
-                </div>
-                <div 
-                  title="Verified by Eco Community Admin"
-                  className="hidden sm:flex items-center gap-1 text-[11px] font-semibold text-teal-700 bg-teal-50 px-2 py-1 rounded-full border border-teal-200"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
-                  <span>Verified</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Post Media */}
-            {post.image && (
-              <div className="relative aspect-video sm:aspect-2/1 bg-slate-100 overflow-hidden">
-                <img
-                  src={post.image}
-                  alt={post.caption}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-                <span className="absolute bottom-3 left-3 px-3 py-1 rounded-full bg-slate-900/70 text-white text-xs font-semibold backdrop-blur-md">
-                  {post.categoryLabel}
-                </span>
-              </div>
-            )}
-
-            {/* Post Caption */}
-            <div className="p-5">
-              <p className="text-slate-700 text-sm leading-relaxed sm:text-base">
-                {post.caption}
-              </p>
-
-              {/* Engagement Bar */}
-              <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => handleLike(post.id)}
-                    className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all cursor-pointer ${
-                      post.isLiked
-                        ? 'bg-rose-50 text-rose-600'
-                        : 'text-slate-600 hover:bg-slate-100'
-                    }`}
-                  >
-                    <Heart className={`w-4 h-4 ${post.isLiked ? 'fill-rose-500 text-rose-500' : 'text-slate-500'}`} />
-                    <span>{post.likesCount}</span>
-                  </button>
-
-                  <button className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 px-3 py-1.5 rounded-full hover:bg-slate-100 transition-colors cursor-pointer">
-                    <MessageCircle className="w-4 h-4 text-slate-500" />
-                    <span>{post.commentsCount} comments</span>
-                  </button>
-                </div>
-
-                <button 
-                  onClick={() => alert('Link copied to clipboard!')}
-                  className="flex items-center gap-1 text-xs text-slate-500 hover:text-emerald-700 transition-colors cursor-pointer"
-                >
-                  <Share2 className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Share</span>
-                </button>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
-
-      {/* Share Eco Action Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">Post Green Action</h3>
-                <p className="text-xs text-slate-500">Inspire others & earn EcoPoints</p>
-              </div>
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center font-bold hover:bg-slate-200 transition-colors"
-              >
-                ✕
               </button>
-            </div>
-
-            <form onSubmit={handleCreatePost} className="mt-5 space-y-4">
-              {/* Category */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Action Category
-                </label>
-                <select
-                  value={newPost.category}
-                  onChange={(e) => setNewPost({ ...newPost, category: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                >
-                  <option value="tree_planting">Tree Planting 🌳</option>
-                  <option value="waste_cleanup">Waste / Beach Cleanup 🧹</option>
-                  <option value="recycling">Recycling & Segregation ♻️</option>
-                  <option value="upcycling">Upcycling Discarded Items 🎨</option>
-                  <option value="organic_gardening">Composting & Organic Gardening 🪴</option>
-                  <option value="sustainable_transport">Public Transit / Cycling 🚲</option>
-                </select>
-              </div>
-
-              {/* Caption */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Describe what you did
-                </label>
-                <textarea
-                  required
-                  rows={3}
-                  value={newPost.caption}
-                  onChange={(e) => setNewPost({ ...newPost, caption: e.target.value })}
-                  placeholder="e.g. Started my first kitchen compost pot with veggie peels and coco-peat! Diverting 3kg waste/week..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                />
-              </div>
-
-              {/* Image URL with instant preview */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Photo URL (Proof of Action)
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    value={newPost.image}
-                    onChange={(e) => setNewPost({ ...newPost, image: e.target.value })}
-                    placeholder="https://images.unsplash.com/... (or paste image link)"
-                    className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                  />
+              <button onClick={() => setSelectedPostId(post.id)} aria-label="Open post" className="flex max-h-[34rem] min-h-40 w-full items-center justify-center bg-slate-950">
+                {post.media_type === 'video' ? <video src={post.media_url} muted playsInline className="max-h-[34rem] w-full object-contain" /> : <img src={post.media_url} alt={post.caption || 'Community post'} className="max-h-[34rem] w-full object-contain" />}
+              </button>
+              <div className="p-4 sm:p-5">
+                <div className="mb-2 flex gap-4 text-sm text-slate-600">
+                  <span className="inline-flex items-center gap-1"><Heart className="h-4 w-4 text-rose-500" />{post.like_count || 0}</span>
+                  <span className="inline-flex items-center gap-1"><MessageCircle className="h-4 w-4 text-emerald-700" />{post.comment_count || 0}</span>
                 </div>
-                {newPost.image && (
-                  <div className="mt-2.5 rounded-xl overflow-hidden border border-slate-200 max-h-40">
-                    <img src={newPost.image} alt="Preview" className="w-full h-36 object-cover" />
-                  </div>
-                )}
+                {post.caption && <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-700"><strong className="text-slate-900">{post.author_name}</strong> {post.caption}</p>}
+                <button onClick={() => setSelectedPostId(post.id)} className="mt-2 text-xs font-bold text-emerald-700 hover:underline">Like or comment</button>
               </div>
-
-              {/* Location */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Location / City
-                </label>
-                <input
-                  type="text"
-                  value={newPost.location}
-                  onChange={(e) => setNewPost({ ...newPost, location: e.target.value })}
-                  placeholder="e.g. Kochi, Kerala"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                />
-              </div>
-
-              {/* EcoPoints Incentive Notice */}
-              <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs text-emerald-800">
-                <span className="font-semibold">Reward for this action:</span>
-                <span className="font-extrabold px-2 py-0.5 rounded-md bg-emerald-200 text-emerald-900">
-                  +25 EcoPoints
-                </span>
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-slate-600 text-sm font-semibold hover:bg-slate-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 shadow-md shadow-emerald-600/30 transition-all cursor-pointer"
-                >
-                  Publish Action
-                </button>
-              </div>
-            </form>
-          </div>
+            </article>
+          ))}
         </div>
       )}
+      {!loading && posts.length > 0 && <button onClick={load} disabled={loading} className="mx-auto mt-6 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"><RefreshCw className="h-4 w-4" /> Refresh feed</button>}
+      {loading && <LoaderCircle className="sr-only" />}
     </div>
   );
 }

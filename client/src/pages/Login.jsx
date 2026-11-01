@@ -1,5 +1,5 @@
 import BackButton from "../components/BackButton";
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Leaf, Mail, Lock, Eye, EyeOff, Loader2, AlertCircle, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
@@ -15,9 +15,11 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(location.state?.error || null);
+  const submittingRef = useRef(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     setError(null);
 
     if (!email || !password) {
@@ -26,6 +28,7 @@ export default function Login() {
     }
 
     try {
+      submittingRef.current = true;
       setLoading(true);
       const res = await login(email, password, rememberMe, 'INDIVIDUAL');
 
@@ -38,6 +41,7 @@ export default function Login() {
     } catch (err) {
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
+      submittingRef.current = false;
       setLoading(false);
     }
   };

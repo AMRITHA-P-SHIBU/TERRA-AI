@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -18,6 +18,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
+import ProfilePage from './pages/ProfilePage';
 
 // Platform Modules
 import HomePage from './components/HomePage';
@@ -26,7 +27,6 @@ import EcoExchange from './components/EcoExchange';
 import CarbonCalculator from './components/CarbonCalculator';
 import AIAssistant from './components/AIAssistant';
 import Leaderboard from './components/Leaderboard';
-import AdminPanel from './components/AdminPanel';
 
 import {
   currentUser as initialUser,
@@ -73,7 +73,7 @@ function LandingPageWrapper() {
 
 function ModuleShell({ activeTab, children }) {
   const [currentUser] = useState(initialUser);
-  const [connectionStatus, setConnectionStatus] = useState({
+  const [connectionStatus] = useState({
     status: 'connected',
     supabase: { status: 'connected' },
   });
@@ -125,11 +125,22 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
 
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ModuleShell activeTab="profile">
+                  <ProfilePage />
+                </ModuleShell>
+              </ProtectedRoute>
+            }
+          />
+
           {/* Role-Protected Dashboards */}
           <Route
             path="/dashboard/individual"
             element={
-              <ProtectedRoute allowedRoles={['INDIVIDUAL', 'SUPER_ADMIN']}>
+              <ProtectedRoute allowedRoles={['INDIVIDUAL', 'ORG_MEMBER', 'SUPER_ADMIN']}>
                 <ModuleShell activeTab="dashboard">
                   <IndividualDashboard />
                 </ModuleShell>

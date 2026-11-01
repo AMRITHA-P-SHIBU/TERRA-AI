@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const AuthContext = createContext(null);
 
@@ -64,9 +64,21 @@ export function AuthProvider({ children }) {
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      const responseText = await res.text();
+      let data = {};
+      if (responseText.trim()) {
+        try {
+          data = JSON.parse(responseText);
+        } catch {
+          throw new Error('The login service returned an unreadable response. Please try again.');
+        }
+      }
+
       if (!res.ok) {
-        throw new Error(data.error || 'Login failed');
+        throw new Error(data.error || `Login failed (HTTP ${res.status}). Please try again.`);
+      }
+      if (!responseText.trim()) {
+        throw new Error('The login service returned an empty response. Please try again.');
       }
 
       setUser(data.user);
@@ -190,7 +202,9 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const role = user?.account_type || null;
+  const role = user?.account_type === 'INDIVIDUAL' && membership?.role === 'MEMBER'
+    ? 'ORG_MEMBER'
+    : user?.account_type || null;
 
   const value = {
     user,
