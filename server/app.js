@@ -14,6 +14,7 @@ import authRoutes from './routes/authRoutes.js';
 import organizationRoutes from './routes/organizationRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import socialRoutes from './routes/socialRoutes.js';
+import carbonRoutes from './routes/carbonRoutes.js';
 import { seedSuperAdmin } from './scripts/seedSuperAdmin.js';
 
 export const app = express();
@@ -112,6 +113,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', socialRoutes);
+app.use('/api/carbon', carbonRoutes);
 
 // -------------------------------------------------------------
 // Existing Terra AI Services (AI Assistant, GreenFeed, Marketplace)
