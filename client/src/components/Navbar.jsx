@@ -15,12 +15,15 @@ import {
   LogIn,
   UserPlus,
   LayoutDashboard,
+  MessageCircle,
 } from 'lucide-react';
 import AvatarCircle from './AvatarCircle';
+import { ecoExchangeService } from '../services/ecoExchangeService';
 
 export default function Navbar({ activeTab, setActiveTab }) {
   const { user, role, organization, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Dropdown state for individual avatar menu
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -38,6 +41,28 @@ export default function Navbar({ activeTab, setActiveTab }) {
     }
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [dropdownOpen]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      ecoExchangeService.clearRealtimeUser();
+      return undefined;
+    }
+    let active = true;
+    let channel;
+    const refreshUnread = () => ecoExchangeService.getUnreadCount()
+      .then(({ count }) => { if (active) setUnreadCount(count); })
+      .catch((error) => console.error('[Navbar] Unable to refresh unread messages:', error));
+    refreshUnread();
+    ecoExchangeService.setRealtimeUser(user.id).then(() => {
+      if (active) channel = ecoExchangeService.subscribeToNotifications(user.id, refreshUnread);
+    }).catch((error) => console.error('[Navbar] Message notifications are unavailable:', error));
+    const timer = window.setInterval(refreshUnread, 30000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      if (channel) ecoExchangeService.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   const getDashboardLink = () => {
     if (role === 'SUPER_ADMIN') return '/dashboard/admin';
@@ -118,6 +143,10 @@ export default function Navbar({ activeTab, setActiveTab }) {
           <div className="flex items-center gap-3">
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
+                <Link to="/messages" className="relative rounded-xl p-2 text-slate-600 transition hover:bg-emerald-50 hover:text-emerald-800" aria-label={`Messages${unreadCount ? `, ${unreadCount} unread` : ''}`}>
+                  <MessageCircle className="h-5 w-5" />
+                  {unreadCount > 0 && <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[9px] font-bold text-white">{unreadCount > 9 ? '9+' : unreadCount}</span>}
+                </Link>
 
                 <div className="relative" ref={dropdownRef}>
                   <AvatarCircle

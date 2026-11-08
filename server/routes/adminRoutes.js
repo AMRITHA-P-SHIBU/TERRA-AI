@@ -13,6 +13,7 @@ import {
 } from '../controllers/adminController.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { authorize } from '../middleware/authorize.js';
+import { getEcoExchangeReports } from '../controllers/ecoExchangeController.js';
 
 const router = Router();
 
@@ -33,5 +34,6 @@ router.get('/organizations/:id/document', getOrganizationDocument);
 // User Management
 router.get('/users', getAllUsers);
 router.patch('/users/:id/status', updateUserStatus);
+router.get('/eco-exchange/reports', getEcoExchangeReports);
 
 export default router;

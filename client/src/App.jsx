@@ -27,11 +27,11 @@ import EcoExchange from './components/EcoExchange';
 import CarbonCalculator from './components/CarbonCalculator';
 import AIAssistant from './components/AIAssistant';
 import Leaderboard from './components/Leaderboard';
+import MessagesPage from './components/MessagesPage';
 
 import {
   currentUser as initialUser,
   initialFeedPosts,
-  initialMarketplaceItems,
   badgesData,
   leaderboardData,
   initialAiSuggestions,
@@ -103,7 +103,6 @@ function ModuleShell({ activeTab, children }) {
 
 export default function App() {
   const [posts, setPosts] = useState(initialFeedPosts);
-  const [marketplaceItems, setMarketplaceItems] = useState(initialMarketplaceItems);
   const [badges] = useState(badgesData);
   const [leaderboard] = useState(leaderboardData);
 
@@ -187,7 +186,18 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ModuleShell activeTab="exchange">
-                  <EcoExchange items={marketplaceItems} setItems={setMarketplaceItems} currentUser={initialUser} />
+                  <EcoExchange />
+                </ModuleShell>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/messages"
+            element={
+              <ProtectedRoute>
+                <ModuleShell activeTab="messages">
+                  <MessagesPage />
                 </ModuleShell>
               </ProtectedRoute>
             }

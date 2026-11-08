@@ -115,6 +115,14 @@ Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in the **server** environment
 
 The migration includes media size/type constraints (10 MB images, 50 MB videos) and the UI checks video duration up to 60 seconds. Review-queue routing is derived from the author's database profile: individual requests go to Super Admin; organization-member requests are limited to that same organization's active admin.
 
+#### Eco Exchange marketplace
+
+The marketplace continues to use the existing Supabase project and the app's HttpOnly-cookie authentication. In the SQL Editor for that same project, run [`supabase/migrations/005_eco_exchange_marketplace.sql`](./supabase/migrations/005_eco_exchange_marketplace.sql), followed by [`supabase/migrations/006_eco_exchange_manual_locations.sql`](./supabase/migrations/006_eco_exchange_manual_locations.sql). If migration 005 has already been applied, run only migration 006. Then run [`supabase/scripts/cleanup_eco_exchange_dummy_data.sql`](./supabase/scripts/cleanup_eco_exchange_dummy_data.sql) to remove the former example listings from `marketplace_items`. Do not run these scripts against a new project.
+
+Add `VITE_GOOGLE_MAPS_API_KEY` to `client/.env` and add `SUPABASE_JWT_SECRET` plus `ECO_EXCHANGE_SCOPE=global` to `server/.env`. The Supabase JWT secret is used only by the authenticated server to authorize participant-filtered Realtime subscriptions; never add it or the service-role key to the client. If the marketplace should use the existing individual/organization visibility boundaries instead, set `ECO_EXCHANGE_SCOPE=scoped`.
+
+In Google Cloud, enable **Maps JavaScript API**, **Places API**, and **Geocoding API**. Restrict the browser key by HTTP referrer to the development and production app domains. A location address is required, but users may type a city, landmark, or address and publish without selecting a map pin; distance and map-pin display are unavailable for manual-only locations. The migration creates the public-read `eco-listings` image bucket and adds `eco_listings`, conversations, messages, offers, reports, notifications, and points-award tables with RLS. Confirm `eco_listings`, `exchange_offers`, `messages`, and `eco_exchange_notifications` are included in the Supabase `supabase_realtime` publication. Public listing location details are filtered by the server; exact coordinates are only returned to the owner or conversation participants.
+
 ---
 
 ### 3. Seed Platform Super Admin
