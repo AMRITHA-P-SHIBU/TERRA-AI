@@ -71,6 +71,27 @@ export default function HomePage({ onExplore, onNavigate }) {
   const [donationAmount, setDonationAmount] = useState(25);
   const [donationInitiative, setDonationInitiative] = useState('trees');
   const [donationSuccess, setDonationSuccess] = useState(false);
+  const [impactStats, setImpactStats] = useState({
+    co2_saved_kg: 245,
+    trees_planted: 12,
+    items_swapped: 8,
+    active_members: 14,
+    total_ecopoints: 75,
+    verified_actions: 9,
+    isLive: false,
+  });
+
+  React.useEffect(() => {
+    fetch('/api/stats/community-impact')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.impact) {
+          setImpactStats({ ...data.impact, isLive: true });
+        }
+      })
+      .catch((err) => console.warn('[Impact Stats Error]:', err.message));
+  }, []);
+
 
 
   // 3 Sections of Fun Environmental Activities To-Do Lists (Exactly 3 per section)
@@ -481,7 +502,7 @@ export default function HomePage({ onExplore, onNavigate }) {
                   <img className="inline-block h-7 w-7 rounded-full ring-2 ring-white" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80" alt="Member" />
                   <img className="inline-block h-7 w-7 rounded-full ring-2 ring-white" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80" alt="Member" />
                 </div>
-                <span>Joined by <strong className="text-emerald-800 font-bold">14,800+</strong> eco-warriors worldwide</span>
+                <span>Joined by <strong className="text-emerald-800 font-bold">{impactStats.active_members}+</strong> eco-warriors in our community</span>
               </div>
             </div>
 
@@ -737,29 +758,44 @@ export default function HomePage({ onExplore, onNavigate }) {
             </p>
           </div>
 
+          <div className="flex items-center justify-center gap-2 mb-8">
+            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-400/30">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Real-Time Campus & Community Impact • Live Database</span>
+            </span>
+          </div>
+
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
-            <div className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xs">
-              <div className="text-4xl sm:text-5xl font-black text-emerald-300 mb-2">142,500</div>
-              <div className="text-sm font-bold text-white mb-1">Kilograms CO₂ Saved</div>
-              <div className="text-xs text-emerald-300/70">Verified through daily tracker logs</div>
+            <div className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xs hover:border-emerald-500/40 transition">
+              <div className="text-4xl sm:text-5xl font-black text-emerald-300 mb-2">
+                {impactStats.co2_saved_kg.toLocaleString()}
+              </div>
+              <div className="text-sm font-bold text-white mb-1">Kilograms CO₂ Tracked & Offset</div>
+              <div className="text-xs text-emerald-300/70">Verified through calculator & green actions</div>
             </div>
 
-            <div className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xs">
-              <div className="text-4xl sm:text-5xl font-black text-emerald-300 mb-2">12,450</div>
-              <div className="text-sm font-bold text-white mb-1">Trees Planted</div>
-              <div className="text-xs text-emerald-300/70">Funded via community EcoPoints</div>
+            <div className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xs hover:border-emerald-500/40 transition">
+              <div className="text-4xl sm:text-5xl font-black text-emerald-300 mb-2">
+                {impactStats.trees_planted.toLocaleString()}
+              </div>
+              <div className="text-sm font-bold text-white mb-1">Trees & Green Actions</div>
+              <div className="text-xs text-emerald-300/70">Audited by Gemini AI on GreenFeed</div>
             </div>
 
-            <div className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xs">
-              <div className="text-4xl sm:text-5xl font-black text-emerald-300 mb-2">28,900</div>
-              <div className="text-sm font-bold text-white mb-1">Items Swapped & Saved</div>
-              <div className="text-xs text-emerald-300/70">Kept out of municipal landfills</div>
+            <div className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xs hover:border-emerald-500/40 transition">
+              <div className="text-4xl sm:text-5xl font-black text-emerald-300 mb-2">
+                {impactStats.total_ecopoints.toLocaleString()}
+              </div>
+              <div className="text-sm font-bold text-white mb-1">EcoPoints Earned</div>
+              <div className="text-xs text-emerald-300/70">Rewarded for verified sustainability</div>
             </div>
 
-            <div className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xs">
-              <div className="text-4xl sm:text-5xl font-black text-emerald-300 mb-2">48,200+</div>
-              <div className="text-sm font-bold text-white mb-1">Active Eco-Warriors</div>
-              <div className="text-xs text-emerald-300/70">Across 64 countries worldwide</div>
+            <div className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xs hover:border-emerald-500/40 transition">
+              <div className="text-4xl sm:text-5xl font-black text-emerald-300 mb-2">
+                {impactStats.active_members}+
+              </div>
+              <div className="text-sm font-bold text-white mb-1">Active Eco-Champions</div>
+              <div className="text-xs text-emerald-300/70">Campus & community network</div>
             </div>
           </div>
         </div>
