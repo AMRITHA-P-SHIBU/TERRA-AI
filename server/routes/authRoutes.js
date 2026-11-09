@@ -34,6 +34,14 @@ const signupLimiter = rateLimit({
   message: { error: 'Too many account creation attempts. Please try again later.' },
 });
 
+const passwordChangeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many password change attempts. Please try again after 15 minutes.' },
+});
+
 // Authentication endpoints
 router.post('/signup/individual', signupLimiter, signupIndividual);
 router.post('/signup/organization', signupLimiter, documentUpload.single('document'), signupOrganization);
@@ -45,7 +53,7 @@ router.get('/me', authenticate, getMe);
 router.post('/forgot-password', authLimiter, forgotPassword);
 router.post('/reset-password', authLimiter, resetPassword);
 router.post('/sync-password', authLimiter, syncPassword);
-router.post('/change-password', authenticate, changePassword);
+router.post('/change-password', passwordChangeLimiter, authenticate, changePassword);
 router.get('/verify-email', verifyEmail);
 
 export default router;

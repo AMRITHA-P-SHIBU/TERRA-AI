@@ -88,21 +88,19 @@ export async function reviewPost(postId, action, remarks = '') {
 }
 export async function getLeaderboard(options = {}) {
   const params = new URLSearchParams();
-  if (typeof options === 'string') {
-    params.set('scope', options);
-  } else if (options && typeof options === 'object') {
-    if (options.scope) params.set('scope', options.scope);
-    if (options.type) params.set('scope', options.type);
-    if (options.organization_id || options.organizationId) {
-      params.set('organization_id', options.organization_id || options.organizationId);
-    }
+  if (options && typeof options === 'object') {
+    if (options.limit) params.set('limit', String(options.limit));
+    if (options.offset) params.set('offset', String(options.offset));
   }
   const qs = params.toString();
-  const res = await api(`/leaderboard${qs ? `?${qs}` : ''}`);
-  const list = res.leaderboard || [];
-  list.leaderboard = list;
-  list.scope = res.scope;
-  list.activeOrganization = res.activeOrganization;
-  list.organizations = res.organizations || [];
-  return list;
+  return api(`/leaderboard${qs ? `?${qs}` : ''}`);
+}
+
+export async function getDashboardStats() {
+  return api('/dashboard-stats');
+}
+
+export async function getAchievementBadges() {
+  const { badges } = await api('/badges');
+  return badges || [];
 }

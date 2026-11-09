@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { supabase } from '../supabase';
 
 const AuthContext = createContext(null);
 
@@ -162,6 +163,19 @@ export function AuthProvider({ children }) {
   const changePassword = async (newPassword, currentPassword) => {
     setError(null);
     try {
+      const { error: reauthError } = await supabase.auth.signInWithPassword({
+        email: user?.email,
+        password: currentPassword,
+      });
+
+      let supabasePasswordVerified = false;
+      if (reauthError) {
+        const invalidCredentials = /invalid login credentials|user not found/i.test(reauthError.message);
+        if (!invalidCredentials) throw new Error(reauthError.message || 'Unable to verify your current password.');
+      } else {
+        supabasePasswordVerified = true;
+      }
+
       const res = await fetch('/api/auth/change-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -173,7 +187,19 @@ export function AuthProvider({ children }) {
         throw new Error(data.error || 'Failed to update password');
       }
       if (user) {
-        setUser((prev) => (prev ? { ...prev, must_change_password: false } : prev));
+        setUser((prev) => (prev ? {
+          ...prev,
+          must_change_password: false,
+          password_changed_at: data.password_changed_at,
+        } : prev));
+      }
+      if (supabasePasswordVerified) {
+        const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+        if (updateError) {
+          throw new Error(
+            `Your Terra AI password changed, but Supabase Auth could not synchronize it: ${updateError.message || 'please contact support.'}`,
+          );
+        }
       }
       return data;
     } catch (err) {

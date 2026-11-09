@@ -363,7 +363,8 @@ export async function login(req, res) {
 
     // Fetch user by email or username
     let userRes = await query(
-      `SELECT id, full_name, email, password_hash, account_type, status, email_verified, created_at
+      `SELECT id, full_name, email, password_hash, account_type, status, email_verified,
+              must_change_password, created_at
        FROM users WHERE email = $1`,
       [email]
     );
@@ -530,6 +531,13 @@ export async function logout(req, res) {
 export async function getMe(req, res) {
   try {
     const user = req.user;
+    const userState = await query(
+      'SELECT must_change_password, password_changed_at FROM users WHERE id = $1',
+      [user.id]
+    );
+    if (!userState.rows[0]) {
+      return res.status(401).json({ error: 'Your session is no longer valid. Please sign in again.' });
+    }
     const safeUser = {
       id: user.id,
       full_name: user.full_name,
@@ -537,7 +545,8 @@ export async function getMe(req, res) {
       account_type: user.account_type,
       status: user.status,
       email_verified: user.email_verified,
-      must_change_password: Boolean(user.must_change_password),
+      must_change_password: Boolean(userState.rows[0].must_change_password),
+      password_changed_at: userState.rows[0].password_changed_at,
       created_at: user.created_at,
     };
     let organization = null;
@@ -725,40 +734,63 @@ export async function verifyEmail(req, res) {
 export async function changePassword(req, res) {
   try {
     const { newPassword, currentPassword } = req.body;
-    if (!newPassword || newPassword.length < 8) {
-      return res.status(400).json({ error: 'New password must be at least 8 characters long.' });
+    if (typeof newPassword !== 'string'
+      || newPassword.length < 8
+      || !/[A-Z]/.test(newPassword)
+      || !/[a-z]/.test(newPassword)
+      || !/[0-9]/.test(newPassword)
+      || !/[^A-Za-z0-9]/.test(newPassword)) {
+      return res.status(400).json({
+        error: 'Password must be at least 8 characters and include uppercase and lowercase letters, a number, and a symbol.',
+      });
+    }
+    if (typeof currentPassword !== 'string' || !currentPassword) {
+      return res.status(400).json({ error: 'Enter your current password to continue.' });
+    }
+    if (newPassword === currentPassword) {
+      return res.status(400).json({ error: 'Your new password must be different from your current password.' });
+    }
+    if (!supabaseAdmin) {
+      return res.status(503).json({ error: 'Profile storage is unavailable. Contact support before retrying.' });
     }
 
     const userId = req.user.id;
-
-    // Fetch user to verify current password if provided and not must_change_password
-    const userRes = await query('SELECT password_hash, must_change_password FROM users WHERE id = $1', [userId]);
+    const userRes = await query('SELECT password_hash FROM users WHERE id = $1', [userId]);
     if (userRes.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
 
     const userRecord = userRes.rows[0];
-
-    // If currentPassword is provided and user is not flagged as must_change_password, verify it
-    if (currentPassword && !userRecord.must_change_password) {
-      const match = await bcrypt.compare(currentPassword, userRecord.password_hash);
-      if (!match) {
-        return res.status(400).json({ error: 'Current password does not match.' });
-      }
+    const match = await bcrypt.compare(currentPassword, userRecord.password_hash);
+    if (!match) {
+      return res.status(400).json({ error: 'Your current password is incorrect.' });
     }
 
-    // Hash new password
     const salt = await bcrypt.genSalt(12);
     const password_hash = await bcrypt.hash(newPassword, salt);
+    const changedAt = new Date().toISOString();
+    const { error: passwordUpdateError } = await supabaseAdmin.rpc('terra_change_password', {
+      target_user: userId,
+      target_password_hash: password_hash,
+      target_changed_at: changedAt,
+    });
+    if (passwordUpdateError) {
+      console.error('[changePassword Database Error]:', passwordUpdateError);
+      return res.status(503).json({
+        error: 'Password service is unavailable. Apply migration 007_real_leaderboard_dashboard_badges.sql and try again.',
+      });
+    }
 
-    // Update users table with password_hash and must_change_password = false
-    await query('UPDATE users SET password_hash = $1 WHERE id = $2', [password_hash, userId]);
-    await query('UPDATE users SET must_change_password = $1 WHERE id = $2', [false, userId]);
-
-    return res.json({ message: 'Password updated successfully! You can now use your new password.' });
+    return res.json({
+      message: 'Password updated successfully.',
+      must_change_password: false,
+      password_changed_at: changedAt,
+    });
   } catch (error) {
     console.error('[changePassword Error]:', error);
-    return res.status(500).json({ error: 'Failed to change password' });
+    return res.status(500).json({
+      error: 'The password could not be changed because the account database update failed. Please try again or contact support.',
+    });
   }
 }
 
@@ -771,17 +803,55 @@ export async function syncPassword(req, res) {
     if (!email || !newPassword || newPassword.length < 8) {
       return res.status(400).json({ error: 'Email and new password (min 8 chars) are required' });
     }
+    if (!supabaseAdmin) {
+      return res.status(503).json({ error: 'Password recovery is temporarily unavailable.' });
+    }
+
+    const accessToken = req.headers.authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+    if (!accessToken) {
+      return res.status(401).json({ error: 'A verified password recovery session is required.' });
+    }
+    const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(accessToken);
+    if (authError || !authData?.user?.email
+      || authData.user.email.toLowerCase() !== email.toLowerCase().trim()) {
+      return res.status(401).json({ error: 'The password recovery session could not be verified.' });
+    }
 
     const cleanEmail = email.toLowerCase().trim();
     const userRes = await query('SELECT id FROM users WHERE email = $1', [cleanEmail]);
-    if (userRes.rows.length > 0) {
-      const salt = await bcrypt.genSalt(12);
-      const password_hash = await bcrypt.hash(newPassword, salt);
-      await query('UPDATE users SET password_hash = $1 WHERE id = $2', [password_hash, userRes.rows[0].id]);
-      await query('UPDATE users SET must_change_password = $1 WHERE id = $2', [false, userRes.rows[0].id]);
+    if (userRes.rows.length === 0) {
+      return res.status(404).json({ error: 'No Terra AI account matches this recovery email.' });
     }
 
-    return res.json({ message: 'Password sync complete' });
+    const salt = await bcrypt.genSalt(12);
+    const password_hash = await bcrypt.hash(newPassword, salt);
+    const changedAt = new Date().toISOString();
+    const userId = userRes.rows[0].id;
+    await query(
+      `UPDATE users
+       SET password_hash = $1, must_change_password = false, password_changed_at = $2
+       WHERE id = $3`,
+      [password_hash, changedAt, userId]
+    );
+
+    const [{ data: individual, error: individualError }, { data: organization, error: organizationError }] =
+      await Promise.all([
+      supabaseAdmin.from('individual_users').select('id').eq('id', userId).maybeSingle(),
+      supabaseAdmin.from('organization_users').select('id').eq('id', userId).maybeSingle(),
+      ]);
+    if (individualError || organizationError) {
+      throw new Error(individualError?.message || organizationError?.message);
+    }
+    const profileTable = individual ? 'individual_users' : organization ? 'organization_users' : null;
+    if (profileTable) {
+      const { error: profileError } = await supabaseAdmin.from(profileTable).update({
+        must_change_password: false,
+        password_changed_at: changedAt,
+      }).eq('id', userId);
+      if (profileError) throw new Error(profileError.message);
+    }
+
+    return res.json({ message: 'Password sync complete.' });
   } catch (error) {
     console.error('[syncPassword Error]:', error);
     return res.status(500).json({ error: 'Failed to sync password' });

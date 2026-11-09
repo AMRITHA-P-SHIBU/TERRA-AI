@@ -88,12 +88,21 @@ export default function ResetPassword() {
           supabaseUpdated = true;
           const userEmail = sbData.user.email || recoveryEmail;
           if (userEmail) {
-            // Sync password hash with backend users table
-            await fetch('/api/auth/sync-password', {
+            const { data: sessionData } = await supabase.auth.getSession();
+            const syncResponse = await fetch('/api/auth/sync-password', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json',
+                ...(sessionData.session?.access_token
+                  ? { Authorization: `Bearer ${sessionData.session.access_token}` }
+                  : {}),
+              },
               body: JSON.stringify({ email: userEmail, newPassword: password }),
             });
+            if (!syncResponse.ok && !token) {
+              const syncError = await syncResponse.json();
+              throw new Error(syncError.error || 'Unable to sync your password with Terra AI.');
+            }
           }
         } else if (sbError) {
           console.warn('[Supabase updateUser warning]:', sbError.message);
@@ -117,11 +126,21 @@ export default function ResetPassword() {
       } else if (!supabaseUpdated) {
         // If neither Supabase nor token succeeded, attempt to sync if recovery email is known
         if (recoveryEmail) {
-          await fetch('/api/auth/sync-password', {
+          const { data: sessionData } = await supabase.auth.getSession();
+          const syncResponse = await fetch('/api/auth/sync-password', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              ...(sessionData.session?.access_token
+                ? { Authorization: `Bearer ${sessionData.session.access_token}` }
+                : {}),
+            },
             body: JSON.stringify({ email: recoveryEmail, newPassword: password }),
           });
+          if (!syncResponse.ok) {
+            const syncError = await syncResponse.json();
+            throw new Error(syncError.error || 'Unable to sync your password with Terra AI.');
+          }
         }
       }
 

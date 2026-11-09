@@ -28,12 +28,10 @@ import CarbonCalculator from './components/CarbonCalculator';
 import AIAssistant from './components/AIAssistant';
 import Leaderboard from './components/Leaderboard';
 import MessagesPage from './components/MessagesPage';
+import PasswordChangeDialog from './components/PasswordChangeDialog';
 
 import {
-  currentUser as initialUser,
   initialFeedPosts,
-  badgesData,
-  leaderboardData,
   initialAiSuggestions,
 } from './data/mockData';
 
@@ -72,19 +70,22 @@ function LandingPageWrapper() {
 }
 
 function ModuleShell({ activeTab, children }) {
-  const [currentUser] = useState(initialUser);
-  const [connectionStatus] = useState({
-    status: 'connected',
-    supabase: { status: 'connected' },
-  });
+  const { user } = useAuth();
+  const [passwordChanged, setPasswordChanged] = useState(false);
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans text-slate-800">
-      <Navbar
-        activeTab={activeTab}
-        currentUser={currentUser}
-        connectionStatus={connectionStatus}
-      />
+      <Navbar activeTab={activeTab} />
+      {user?.must_change_password && (
+        <PasswordChangeDialog
+          mandatory
+          onSuccess={() => {
+            setPasswordChanged(true);
+            window.setTimeout(() => setPasswordChanged(false), 4000);
+          }}
+        />
+      )}
+      {passwordChanged && <div role="status" className="fixed bottom-5 right-5 z-[110] rounded-xl bg-emerald-800 px-4 py-3 text-sm font-bold text-white shadow-xl">Password updated successfully.</div>}
       <main className="flex-1 pb-16">{children}</main>
       <footer className="bg-emerald-50 border-t border-emerald-100 py-6 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -103,8 +104,6 @@ function ModuleShell({ activeTab, children }) {
 
 export default function App() {
   const [posts, setPosts] = useState(initialFeedPosts);
-  const [badges] = useState(badgesData);
-  const [leaderboard] = useState(leaderboardData);
 
   return (
     <BrowserRouter>
@@ -175,7 +174,7 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ModuleShell activeTab="feed">
-                  <GreenFeed posts={posts} setPosts={setPosts} currentUser={initialUser} />
+                  <GreenFeed posts={posts} setPosts={setPosts} />
                 </ModuleShell>
               </ProtectedRoute>
             }
@@ -208,7 +207,7 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ModuleShell activeTab="calculator">
-                  <CarbonCalculator currentUser={initialUser} />
+                  <CarbonCalculator />
                 </ModuleShell>
               </ProtectedRoute>
             }
@@ -230,7 +229,7 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ModuleShell activeTab="leaderboard">
-                  <Leaderboard currentUser={initialUser} badges={badges} leaderboard={leaderboard} />
+                  <Leaderboard />
                 </ModuleShell>
               </ProtectedRoute>
             }

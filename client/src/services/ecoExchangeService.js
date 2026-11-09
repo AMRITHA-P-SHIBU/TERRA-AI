@@ -97,6 +97,13 @@ export const ecoExchangeService = {
       }, onChange)
       .subscribe();
   },
+  subscribeToActivityEvents(onChange) {
+    return supabase.channel('terra-activity-events')
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'terra_activity_events',
+      }, onChange)
+      .subscribe();
+  },
   removeChannel: (channel) => supabase.removeChannel(channel),
 };
 

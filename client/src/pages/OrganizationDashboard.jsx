@@ -170,8 +170,8 @@ export default function OrganizationDashboard() {
 
   useEffect(() => {
     fetchMembers();
-    getLeaderboard({ scope: 'organization', organization_id: organization?.id })
-      .then(data => setOrgLeaderboard((data || []).slice(0, 10)))
+    getLeaderboard({ limit: 10, offset: 0 })
+      .then(data => setOrgLeaderboard(data.leaderboard || []))
       .catch(() => {});
   }, [organization?.id]);
 

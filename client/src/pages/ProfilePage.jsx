@@ -1,6 +1,6 @@
 import BackButton from "../components/BackButton";
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import {
   AlertCircle, CalendarDays, Check, Heart, Image as ImageIcon,
   LoaderCircle, Mail, MapPin, MessageCircle, Pencil, Phone, Play,
@@ -8,11 +8,13 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import AvatarCircle from '../components/AvatarCircle';
+import PasswordChangeDialog from '../components/PasswordChangeDialog';
 import {
   createPost, deleteComment, deletePost, getPostDetail, getProfile,
-  getUserPosts, addComment, togglePostLike, updateProfile,
+  getUserPosts, getAchievementBadges, addComment, togglePostLike, updateProfile,
   IMAGE_SIZE_LIMIT, POST_CAPTION_LIMIT, VIDEO_DURATION_LIMIT_SECONDS, VIDEO_SIZE_LIMIT,
 } from '../services/profileService';
+import { ecoExchangeService } from '../services/ecoExchangeService';
 
 function Media({ post, className = '' }) {
   if (!post?.media_url) return <div className={`flex items-center justify-center bg-slate-100 ${className}`}><ImageIcon className="w-10 h-10 text-slate-300" /></div>;
@@ -277,9 +279,11 @@ function StatusBadge({ status }) {
 export default function ProfilePage() {
   const { user, role } = useAuth();
   const isAdmin = role === 'SUPER_ADMIN' || role === 'ORG_ADMIN' || user?.account_type === 'SUPER_ADMIN' || user?.account_type === 'ORG_ADMIN';
-  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
+  const [profileBadges, setProfileBadges] = useState([]);
+  const earnedBadgeIds = useRef(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('posts');
   const [editingBio, setEditingBio] = useState(false);
@@ -289,6 +293,9 @@ export default function ProfilePage() {
   const [selectedPostId, setSelectedPostId] = useState(null);
   const [toast, setToast] = useState(null);
   const [loadError, setLoadError] = useState('');
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(
+    () => searchParams.get('settings') === 'password',
+  );
 
   const notify = useCallback((message, type = 'success') => {
     setToast({ message, type });
@@ -299,10 +306,14 @@ export default function ProfilePage() {
     setLoading(true);
     setLoadError('');
     try {
-      const [nextProfile, nextPosts] = await Promise.all([getProfile(), getUserPosts()]);
+      const [nextProfile, nextPosts, nextBadges] = await Promise.all([
+        getProfile(), getUserPosts(), getAchievementBadges(),
+      ]);
       setProfile(nextProfile);
       setBio(nextProfile.bio || '');
       setPosts(nextPosts);
+      setProfileBadges(nextBadges);
+      earnedBadgeIds.current = new Set(nextBadges.filter((badge) => badge.earned).map((badge) => badge.id));
     } catch (error) {
       setLoadError(error.message);
     } finally {
@@ -312,17 +323,49 @@ export default function ProfilePage() {
 
   useEffect(() => {
     let active = true;
-    Promise.all([getProfile(), getUserPosts()])
-      .then(([nextProfile, nextPosts]) => {
+    Promise.all([getProfile(), getUserPosts(), getAchievementBadges()])
+      .then(([nextProfile, nextPosts, nextBadges]) => {
         if (!active) return;
         setProfile(nextProfile);
         setBio(nextProfile.bio || '');
         setPosts(nextPosts);
+        setProfileBadges(nextBadges);
+        earnedBadgeIds.current = new Set(nextBadges.filter((badge) => badge.earned).map((badge) => badge.id));
       })
       .catch((error) => { if (active) setLoadError(error.message); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    if (!user?.id) return undefined;
+    let active = true;
+    let channel;
+    ecoExchangeService.setRealtimeUser(user.id)
+      .then(() => {
+        if (active) {
+          channel = ecoExchangeService.subscribeToActivityEvents(async () => {
+            try {
+              const nextBadges = await getAchievementBadges();
+              if (!active) return;
+              const nextEarned = new Set(nextBadges.filter((badge) => badge.earned).map((badge) => badge.id));
+              const previous = earnedBadgeIds.current;
+              const newlyEarned = previous && nextBadges.find((badge) => badge.earned && !previous.has(badge.id));
+              earnedBadgeIds.current = nextEarned;
+              setProfileBadges(nextBadges);
+              if (newlyEarned) notify(`${newlyEarned.name} badge earned!`);
+            } catch (error) {
+              if (active) notify(error.message || 'Unable to refresh your badges.', 'error');
+            }
+          });
+        }
+      })
+      .catch((error) => console.error('[Profile] Badge realtime is unavailable:', error));
+    return () => {
+      active = false;
+      if (channel) ecoExchangeService.removeChannel(channel);
+    };
+  }, [user?.id, notify]);
 
   const saveBio = async () => {
     setSavingBio(true);
@@ -335,6 +378,16 @@ export default function ProfilePage() {
       notify(error.message, 'error');
     } finally {
       setSavingBio(false);
+    }
+  };
+
+  const closePasswordDialog = () => {
+    setPasswordDialogOpen(false);
+    if (searchParams.has('settings')) {
+      setSearchParams((current) => {
+        current.delete('settings');
+        return current;
+      }, { replace: true });
     }
   };
 
@@ -362,6 +415,11 @@ export default function ProfilePage() {
       <Toast toast={toast} onClose={() => setToast(null)} />
       {addPostOpen && !isAdmin && <AddPostModal onClose={() => setAddPostOpen(false)} onCreated={onPostCreated} />}
       {selectedPostId && <PostDetailModal postId={selectedPostId} currentUserId={user?.id} onClose={() => { setSelectedPostId(null); loadProfile(); }} onDeleted={onPostDeleted} notify={notify} />}
+      <PasswordChangeDialog
+        open={passwordDialogOpen}
+        onClose={closePasswordDialog}
+        onSuccess={() => notify('Password updated successfully.')}
+      />
 
       <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10">
         <BackButton fallback="/dashboard/individual" label="Back to Dashboard" className="mb-5" />
@@ -439,6 +497,37 @@ export default function ProfilePage() {
               ))}
             </dl>
           )}
+        </section>
+
+        <section className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <div>
+            <h2 className="text-base font-extrabold text-slate-900">Account security</h2>
+            <p className="mt-1 text-sm text-slate-500">Update your password using your current credentials.</p>
+          </div>
+          <button onClick={() => setPasswordDialogOpen(true)} className="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800">
+            Change password
+          </button>
+        </section>
+
+        <section className="mt-5 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-extrabold text-slate-900">Community badges</h2>
+              <p className="mt-1 text-sm text-slate-500">Earned badges update automatically as you reach milestones.</p>
+            </div>
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
+              {profileBadges.filter((badge) => badge.earned).length} earned
+            </span>
+          </div>
+          {profileBadges.filter((badge) => badge.earned).length ? (
+            <div className="flex flex-wrap gap-2">
+              {profileBadges.filter((badge) => badge.earned).map((badge) => (
+                <span key={badge.id} title={badge.description} className="inline-flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-900">
+                  <span>{badge.icon || '🌱'}</span>{badge.name}
+                </span>
+              ))}
+            </div>
+          ) : <p className="text-sm text-slate-500">Your first achievement is waiting. Keep taking eco-friendly actions!</p>}
         </section>
 
         {!isAdmin && (

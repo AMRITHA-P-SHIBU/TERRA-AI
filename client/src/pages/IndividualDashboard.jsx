@@ -1,5 +1,5 @@
 import BackButton from "../components/BackButton";
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -9,92 +9,88 @@ import {
   Calculator,
   Bot,
   Award,
-  ShieldCheck,
   TrendingUp,
   ArrowUpRight,
   UserCheck,
   CheckCircle2,
-  Calendar,
-  Lock,
-  Eye,
-  EyeOff,
-  AlertCircle,
-  Loader2,
-  X,
   KeyRound,
   Trophy,
 } from 'lucide-react';
-import { getProfile, getLeaderboard } from '../services/profileService';
+import { getAchievementBadges, getDashboardStats, getProfile, getLeaderboard } from '../services/profileService';
+import { ecoExchangeService } from '../services/ecoExchangeService';
 import AnnouncementsFeed from '../components/AnnouncementsFeed';
 
 export default function IndividualDashboard({ onSelectTab }) {
-  const { user, role, organization, membership, changePassword } = useAuth();
+  const { user, role, organization, membership } = useAuth();
   const navigate = useNavigate();
-
-  // Password Change Modal State (auto-opens if must_change_password is true)
-  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [livePoints, setLivePoints] = useState(null);
   const [topUsers, setTopUsers] = useState([]);
+  const [dashboardStats, setDashboardStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState('');
+  const [badgeToast, setBadgeToast] = useState('');
+  const [statsRetry, setStatsRetry] = useState(0);
+  const previousBadgeIds = useRef(null);
 
   useEffect(() => {
-    getProfile().then(p => setLivePoints(p?.total_ecopoints ?? 0)).catch(() => {});
-    const isOrg = role === 'ORG_MEMBER' || role === 'ORG_ADMIN' || Boolean(membership?.organization_id || organization?.id);
-    const orgTarget = organization?.id || membership?.organization_id;
-    getLeaderboard(isOrg ? { scope: 'organization', organization_id: orgTarget } : { scope: 'individual' })
-      .then(data => setTopUsers((data || []).slice(0, 5)))
-      .catch(() => {});
-  }, []);
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [changeLoading, setChangeLoading] = useState(false);
-  const [changeError, setChangeError] = useState(null);
-  const [changeSuccess, setChangeSuccess] = useState(null);
+    let active = true;
+    let channel;
+    const refresh = async () => {
+      try {
+        const [stats, profile, badges] = await Promise.all([
+          getDashboardStats(),
+          getProfile(),
+          getAchievementBadges(),
+        ]);
+        if (!active) return;
+        setDashboardStats(stats);
+        setLivePoints(profile?.total_ecopoints ?? 0);
+        setStatsError('');
+        const earnedIds = new Set(badges.filter((badge) => badge.earned).map((badge) => badge.id));
+        if (previousBadgeIds.current) {
+          const newlyEarned = badges.find((badge) => badge.earned && !previousBadgeIds.current.has(badge.id));
+          if (newlyEarned) {
+            setBadgeToast(`${newlyEarned.name} badge earned!`);
+            window.setTimeout(() => setBadgeToast(''), 4000);
+          }
+        }
+        previousBadgeIds.current = earnedIds;
+      } catch (error) {
+        if (active) setStatsError(error.message || 'Unable to load your dashboard statistics.');
+      } finally {
+        if (active) setStatsLoading(false);
+      }
 
-  useEffect(() => {
-    if (user?.must_change_password) {
-      setPasswordModalOpen(true);
+      try {
+        const leaderboard = await getLeaderboard({ limit: 5, offset: 0 });
+        if (active) setTopUsers(leaderboard.leaderboard || []);
+      } catch (error) {
+        if (active) console.error('[Dashboard] Unable to refresh the leaderboard preview:', error);
+      }
+    };
+
+    refresh();
+    if (user?.id) {
+      ecoExchangeService.setRealtimeUser(user.id)
+        .then(() => {
+          if (active) channel = ecoExchangeService.subscribeToActivityEvents(refresh);
+        })
+        .catch((error) => {
+          if (active) console.error('[Dashboard] Live updates are unavailable:', error);
+        });
     }
-  }, [user]);
+
+    return () => {
+      active = false;
+      if (channel) ecoExchangeService.removeChannel(channel);
+    };
+  }, [user?.id, statsRetry]);
 
   const handleLaunchModule = (tab) => {
     if (onSelectTab) {
       onSelectTab(tab);
     } else {
       navigate(`/${tab}`);
-    }
-  };
-
-  const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
-    setChangeError(null);
-    setChangeSuccess(null);
-
-    if (!newPassword || newPassword.length < 8) {
-      setChangeError('Password must be at least 8 characters long.');
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setChangeError('Passwords do not match.');
-      return;
-    }
-
-    try {
-      setChangeLoading(true);
-      await changePassword(newPassword);
-      setChangeSuccess('Password updated successfully! Your account is now fully secured.');
-      setNewPassword('');
-      setConfirmPassword('');
-
-      setTimeout(() => {
-        setChangeSuccess(null);
-        setPasswordModalOpen(false);
-      }, 1800);
-    } catch (err) {
-      setChangeError(err.message || 'Failed to update password');
-    } finally {
-      setChangeLoading(false);
     }
   };
 
@@ -129,8 +125,8 @@ export default function IndividualDashboard({ onSelectTab }) {
               </div>
               <div>
                 <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Earned EcoPoints</span>
-                <p className="text-2xl sm:text-3xl font-black text-emerald-700">{livePoints !== null ? livePoints : 0} pts</p>
-                <span className="text-[11px] text-emerald-600 font-medium">Level 2 Planet Guardian</span>
+                <p className="text-2xl sm:text-3xl font-black text-emerald-700">{livePoints !== null ? livePoints : '—'} pts</p>
+                <span className="text-[11px] text-emerald-600 font-medium">Your current community total</span>
               </div>
             </div>
           </div>
@@ -138,6 +134,12 @@ export default function IndividualDashboard({ onSelectTab }) {
 
         {/* Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {statsError && (
+            <div role="alert" className="sm:col-span-2 lg:col-span-4 flex flex-wrap items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+              <span>{statsError}</span>
+              <button onClick={() => { setStatsLoading(true); setStatsRetry((value) => value + 1); }} className="ml-auto font-bold underline">Retry</button>
+            </div>
+          )}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Carbon Offset</span>
@@ -145,8 +147,14 @@ export default function IndividualDashboard({ onSelectTab }) {
                 <TrendingUp className="w-4 h-4" />
               </div>
             </div>
-            <p className="text-2xl font-black text-slate-800 mt-3">28.4 <span className="text-sm font-semibold text-slate-500">kg CO₂e</span></p>
-            <p className="text-xs text-emerald-700 mt-1 font-medium">↓ 14% vs monthly target</p>
+            {statsLoading ? (
+              <div className="mt-3 h-8 w-28 animate-pulse rounded bg-slate-100" />
+            ) : (
+              <>
+                <p className="text-2xl font-black text-slate-800 mt-3">{Number(dashboardStats?.carbon_offset_kg || 0).toFixed(1)} <span className="text-sm font-semibold text-slate-500">kg CO₂e</span></p>
+                <p className="text-xs text-emerald-700 mt-1 font-medium">{dashboardStats?.carbon_offset_kg ? 'Recorded month-to-month carbon reductions' : 'Log carbon activities to track reductions.'}</p>
+              </>
+            )}
           </div>
 
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
@@ -156,8 +164,16 @@ export default function IndividualDashboard({ onSelectTab }) {
                 <Leaf className="w-4 h-4" />
               </div>
             </div>
-            <p className="text-2xl font-black text-slate-800 mt-3">6 <span className="text-sm font-semibold text-slate-500">Actions</span></p>
-            <p className="text-xs text-teal-600 mt-1 font-medium">Compost + Tree Planting</p>
+            {statsLoading ? (
+              <div className="mt-3 h-8 w-28 animate-pulse rounded bg-slate-100" />
+            ) : (
+              <>
+                <p className="text-2xl font-black text-slate-800 mt-3">{dashboardStats?.approved_posts || 0} <span className="text-sm font-semibold text-slate-500">Posts</span></p>
+                <p className="text-xs text-teal-600 mt-1 font-medium">
+                  {dashboardStats?.pending_posts ? `${dashboardStats.pending_posts} pending review` : dashboardStats?.approved_posts ? 'Approved GreenFeed posts' : 'Share your first GreenFeed post.'}
+                </p>
+              </>
+            )}
           </div>
 
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
@@ -167,8 +183,16 @@ export default function IndividualDashboard({ onSelectTab }) {
                 <ShoppingBag className="w-4 h-4" />
               </div>
             </div>
-            <p className="text-2xl font-black text-slate-800 mt-3">2 <span className="text-sm font-semibold text-slate-500">Listings</span></p>
-            <p className="text-xs text-teal-600 mt-1 font-medium">1 Terracotta Pot bartered</p>
+            {statsLoading ? (
+              <div className="mt-3 h-8 w-28 animate-pulse rounded bg-slate-100" />
+            ) : (
+              <>
+                <p className="text-2xl font-black text-slate-800 mt-3">{dashboardStats?.listings || 0} <span className="text-sm font-semibold text-slate-500">Listings</span></p>
+                <p className="text-xs text-teal-600 mt-1 font-medium">
+                  {dashboardStats?.completed_exchanges || 0} completed exchanges{!dashboardStats?.listings && !dashboardStats?.completed_exchanges ? ' · List your first item.' : ''}
+                </p>
+              </>
+            )}
           </div>
 
           <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg">
@@ -178,8 +202,16 @@ export default function IndividualDashboard({ onSelectTab }) {
                 <Sparkles className="w-4 h-4" />
               </div>
             </div>
-            <p className="text-2xl font-black text-white mt-3">3 <span className="text-sm font-semibold text-slate-400">Badges</span></p>
-            <p className="text-xs text-amber-400 mt-1 font-medium">Clean Champion Unlocked</p>
+            {statsLoading ? (
+              <div className="mt-3 h-8 w-28 animate-pulse rounded bg-slate-700" />
+            ) : (
+              <>
+                <p className="text-2xl font-black text-white mt-3">{dashboardStats?.earned_badges || 0} <span className="text-sm font-semibold text-slate-400">of {dashboardStats?.total_badges || 0}</span></p>
+                <p className="text-xs text-amber-400 mt-1 font-medium">
+                  {dashboardStats?.earned_badges ? 'Keep going to earn more badges.' : 'Complete activities to earn your first badge.'}
+                </p>
+              </>
+            )}
           </div>
         </div>
 
@@ -358,13 +390,13 @@ export default function IndividualDashboard({ onSelectTab }) {
             </div>
             <div>
               <p className="font-semibold text-slate-800">Authenticated Session Active</p>
-              <p className="text-slate-500">Logged in as {user?.email} • Account Type: INDIVIDUAL</p>
+              <p className="text-slate-500">Logged in as {user?.email} • Account Type: {role || user?.account_type}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2.5">
             <button
-              onClick={() => setPasswordModalOpen(true)}
+              onClick={() => navigate('/profile?settings=password')}
               className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-emerald-400 border border-slate-700 font-semibold flex items-center gap-1.5 transition cursor-pointer"
             >
               <KeyRound className="w-3.5 h-3.5" />
@@ -374,120 +406,13 @@ export default function IndividualDashboard({ onSelectTab }) {
               Status: ACTIVE
             </span>
             <span className="px-3 py-1 bg-slate-800 text-slate-400 rounded-full">
-              Role: Citizen
+              Role: {role || user?.account_type}
             </span>
           </div>
         </div>
 
-        {/* Password Change / First Login Prompt Modal */}
-        {passwordModalOpen && (
-          <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-emerald-500/30 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative animate-scaleUp">
-              {!user?.must_change_password && (
-                <button
-                  onClick={() => setPasswordModalOpen(false)}
-                  className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg transition"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              )}
-
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center">
-                  <Lock className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-white">
-                    {user?.must_change_password ? 'Set Your New Password' : 'Change Password'}
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    {user?.must_change_password
-                      ? 'Please update your temporary password to continue.'
-                      : 'Choose a new secure password for your account.'}
-                  </p>
-                </div>
-              </div>
-
-              {changeSuccess && (
-                <div className="mb-4 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
-                  <span>{changeSuccess}</span>
-                </div>
-              )}
-
-              {changeError && (
-                <div className="mb-4 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
-                  <span>{changeError}</span>
-                </div>
-              )}
-
-              <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                    New Password (min 8 chars)
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      required
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="block w-full pl-4 pr-11 py-2.5 bg-slate-950/70 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder-slate-400"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white transition cursor-pointer"
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                    Confirm New Password
-                  </label>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="block w-full px-4 py-2.5 bg-slate-950/70 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder-slate-400"
-                  />
-                </div>
-
-                <div className="pt-2 flex items-center justify-end gap-3">
-                  {!user?.must_change_password && (
-                    <button
-                      type="button"
-                      onClick={() => setPasswordModalOpen(false)}
-                      className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition"
-                    >
-                      Cancel
-                    </button>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={changeLoading}
-                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition"
-                  >
-                    {changeLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Check className="w-4 h-4" />
-                    )}
-                    <span>Save New Password</span>
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
       </div>
+      {badgeToast && <div role="status" className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-xl bg-emerald-800 px-4 py-3 text-sm font-bold text-white shadow-xl"><CheckCircle2 className="h-4 w-4" />{badgeToast}</div>}
     </div>
   );
 }
