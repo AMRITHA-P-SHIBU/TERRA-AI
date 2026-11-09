@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   Leaf,
@@ -93,8 +93,22 @@ export default function Navbar({ activeTab, setActiveTab }) {
     }
   };
 
-  // Is the logged-in user an Individual citizen?
-  const isIndividual = role === 'INDIVIDUAL';
+  // Hide platform navigation and message button for Individual citizens, Super Admin, and Organization Admin
+  const location = useLocation();
+  const isIndividual = role === 'INDIVIDUAL' || user?.account_type === 'INDIVIDUAL';
+  const isSuperAdmin =
+    role === 'SUPER_ADMIN' ||
+    user?.account_type === 'SUPER_ADMIN' ||
+    activeTab === 'admin' ||
+    location.pathname.startsWith('/dashboard/admin') ||
+    location.pathname === '/admin';
+  const isOrgAdmin =
+    role === 'ORG_ADMIN' ||
+    user?.account_type === 'ORG_ADMIN' ||
+    location.pathname.startsWith('/dashboard/organization') ||
+    location.pathname.includes('organization');
+  const showPlatformNav = !isIndividual && !isSuperAdmin && !isOrgAdmin;
+  const showMessages = !isSuperAdmin && !isOrgAdmin;
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 text-slate-800 shadow-sm">
@@ -109,8 +123,8 @@ export default function Navbar({ activeTab, setActiveTab }) {
             />
           </Link>
 
-          {/* Center Nav Items — hidden for Individual citizens */}
-          {!isIndividual && (
+          {/* Center Nav Items — hidden for Individual citizens and Super Admin */}
+          {showPlatformNav && (
             <nav className="hidden md:flex items-center gap-1">
               {navItems.map((item) => {
                 const Icon = item.icon;
@@ -143,10 +157,12 @@ export default function Navbar({ activeTab, setActiveTab }) {
           <div className="flex items-center gap-3">
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
-                <Link to="/messages" className="relative rounded-xl p-2 text-slate-600 transition hover:bg-emerald-50 hover:text-emerald-800" aria-label={`Messages${unreadCount ? `, ${unreadCount} unread` : ''}`}>
-                  <MessageCircle className="h-5 w-5" />
-                  {unreadCount > 0 && <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[9px] font-bold text-white">{unreadCount > 9 ? '9+' : unreadCount}</span>}
-                </Link>
+                {showMessages && (
+                  <Link to="/messages" className="relative rounded-xl p-2 text-slate-600 transition hover:bg-emerald-50 hover:text-emerald-800" aria-label={`Messages${unreadCount ? `, ${unreadCount} unread` : ''}`}>
+                    <MessageCircle className="h-5 w-5" />
+                    {unreadCount > 0 && <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[9px] font-bold text-white">{unreadCount > 9 ? '9+' : unreadCount}</span>}
+                  </Link>
+                )}
 
                 <div className="relative" ref={dropdownRef}>
                   <AvatarCircle
@@ -242,8 +258,8 @@ export default function Navbar({ activeTab, setActiveTab }) {
           </div>
         </div>
 
-        {/* Mobile Navigation Bar — hidden for Individual citizens */}
-        {!isIndividual && (
+        {/* Mobile Navigation Bar — hidden for Individual citizens and Super Admin */}
+        {showPlatformNav && (
           <div className="flex md:hidden items-center justify-around py-2 border-t border-slate-200 overflow-x-auto gap-1">
             {navItems.map((item) => {
               const Icon = item.icon;

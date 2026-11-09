@@ -48,7 +48,7 @@ function validateCarbonInputs(body) {
 }
 
 /**
- * Award EcoPoints to individual_users table
+ * Award EcoPoints to individual_users or organization_users table
  */
 async function awardEcoPoints(userId, points) {
   if (!supabaseAdmin) return 0;
@@ -59,15 +59,37 @@ async function awardEcoPoints(userId, points) {
       .eq('id', userId)
       .maybeSingle();
 
-    const currentPoints = Number(iu?.total_ecopoints) || 0;
-    const newTotal = currentPoints + points;
+    if (iu !== null && iu !== undefined) {
+      const currentPoints = Number(iu?.total_ecopoints) || 0;
+      const newTotal = currentPoints + points;
 
-    await supabaseAdmin
-      .from('individual_users')
-      .update({ total_ecopoints: newTotal })
-      .eq('id', userId);
+      await supabaseAdmin
+        .from('individual_users')
+        .update({ total_ecopoints: newTotal })
+        .eq('id', userId);
 
-    return newTotal;
+      return newTotal;
+    }
+
+    const { data: ou } = await supabaseAdmin
+      .from('organization_users')
+      .select('total_ecopoints')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (ou !== null && ou !== undefined) {
+      const currentPoints = Number(ou?.total_ecopoints) || 0;
+      const newTotal = currentPoints + points;
+
+      await supabaseAdmin
+        .from('organization_users')
+        .update({ total_ecopoints: newTotal })
+        .eq('id', userId);
+
+      return newTotal;
+    }
+
+    return null;
   } catch (err) {
     console.error('[Carbon EcoPoints Error]:', err.message);
     return null;

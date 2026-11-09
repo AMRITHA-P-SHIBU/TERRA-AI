@@ -162,6 +162,175 @@ app.get('/api/stats/public', async (_req, res) => {
 });
 
 // -------------------------------------------------------------
+
+// -------------------------------------------------------------
+// Contact Messages (Public submit, Admin view)
+// -------------------------------------------------------------
+import fsExtra from 'fs';
+import pathExtra from 'path';
+
+const localMessagesFile = pathExtra.join(
+  process.cwd().endsWith('server') ? process.cwd() : pathExtra.join(process.cwd(), 'server'),
+  'data',
+  'contact_messages.json'
+);
+function getLocalMessages() {
+  try {
+    if (fsExtra.existsSync(localMessagesFile)) {
+      return JSON.parse(fsExtra.readFileSync(localMessagesFile, 'utf8'));
+    }
+  } catch (e) {}
+  return [];
+}
+function saveLocalMessages(msgs) {
+  try {
+    const dir = pathExtra.dirname(localMessagesFile);
+    if (!fsExtra.existsSync(dir)) fsExtra.mkdirSync(dir, { recursive: true });
+    fsExtra.writeFileSync(localMessagesFile, JSON.stringify(msgs, null, 2), 'utf8');
+  } catch (e) {}
+}
+
+app.post('/api/contact', async (req, res) => {
+  try {
+    const { name, email, message } = req.body || {};
+
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Name is required.' });
+    if (!email || !email.trim()) return res.status(400).json({ error: 'Email is required.' });
+    if (!message || !message.trim()) return res.status(400).json({ error: 'Message is required.' });
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      return res.status(400).json({ error: 'Please provide a valid email address.' });
+    }
+
+    if (message.trim().length < 5) {
+      return res.status(400).json({ error: 'Message must be at least 5 characters.' });
+    }
+
+    const newMessage = {
+      id: 'cm_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+      sender_name: name.trim(),
+      sender_email: email.trim().toLowerCase(),
+      message: message.trim(),
+      is_read: false,
+      created_at: new Date().toISOString()
+    };
+
+    // Try Supabase first
+    let saved = false;
+    if (supabaseAdmin) {
+      try {
+        const { data, error } = await supabaseAdmin.from('contact_messages').insert({
+          sender_name: newMessage.sender_name,
+          sender_email: newMessage.sender_email,
+          message: newMessage.message
+        }).select().maybeSingle();
+
+        if (!error && data) {
+          newMessage.id = data.id;
+          saved = true;
+        }
+      } catch (e) {
+        console.warn('[Contact] Supabase table fallback:', e.message);
+      }
+    }
+
+    // Always keep in local file for redundancy
+    const local = getLocalMessages();
+    local.unshift(newMessage);
+    saveLocalMessages(local);
+
+    console.log(`[Contact] New inquiry from ${newMessage.sender_email} received.`);
+    return res.status(201).json({
+      success: true,
+      message: 'Your message has been sent to our team. We will respond within 24 hours.'
+    });
+  } catch (err) {
+    console.error('[Contact Error]:', err.message);
+    return res.status(500).json({ error: 'Failed to send message. Please try again.' });
+  }
+});
+
+app.get('/api/admin/contact-messages', authenticate, async (req, res) => {
+  try {
+    if (req.user?.account_type !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Forbidden: Super Admin access only.' });
+    }
+
+    let messages = [];
+    if (supabaseAdmin) {
+      try {
+        const { data, error } = await supabaseAdmin
+          .from('contact_messages')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!error && data && data.length > 0) {
+          messages = data;
+        }
+      } catch (e) {}
+    }
+
+    if (messages.length === 0) {
+      messages = getLocalMessages();
+    }
+
+    const unreadCount = messages.filter(m => !m.is_read).length;
+    return res.json({ messages, unreadCount });
+  } catch (err) {
+    console.error('[Admin Contact Messages Error]:', err.message);
+    return res.status(500).json({ error: 'Failed to load messages.' });
+  }
+});
+
+app.patch('/api/admin/contact-messages/:id/read', authenticate, async (req, res) => {
+  try {
+    if (req.user?.account_type !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Forbidden: Super Admin access only.' });
+    }
+
+    const { id } = req.params;
+    const { is_read } = req.body;
+    const readStatus = is_read !== false;
+
+    if (supabaseAdmin) {
+      try {
+        await supabaseAdmin.from('contact_messages').update({ is_read: readStatus }).eq('id', id);
+      } catch (e) {}
+    }
+
+    const local = getLocalMessages();
+    const target = local.find(m => m.id === id);
+    if (target) target.is_read = readStatus;
+    saveLocalMessages(local);
+
+    return res.json({ success: true, message: 'Message updated.' });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to update message.' });
+  }
+});
+
+app.delete('/api/admin/contact-messages/:id', authenticate, async (req, res) => {
+  try {
+    if (req.user?.account_type !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Forbidden: Super Admin access only.' });
+    }
+
+    const { id } = req.params;
+    if (supabaseAdmin) {
+      try {
+        await supabaseAdmin.from('contact_messages').delete().eq('id', id);
+      } catch (e) {}
+    }
+
+    const local = getLocalMessages().filter(m => m.id !== id);
+    saveLocalMessages(local);
+
+    return res.json({ success: true, message: 'Message deleted.' });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to delete message.' });
+  }
+});
+
 // Authentication & RBAC Routes
 // -------------------------------------------------------------
 app.use('/api/auth', authRoutes);

@@ -20,6 +20,22 @@ async function awardEcoPointsToUser(userId, points) {
         .update({ total_ecopoints: current + points })
         .eq('id', userId);
       console.log(`[EcoPoints] Awarded ${points} pts to user ${userId} (new total: ${current + points})`);
+      return;
+    }
+
+    const { data: ou } = await supabaseAdmin
+      .from('organization_users')
+      .select('total_ecopoints')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (ou !== null && ou !== undefined) {
+      const current = Number(ou.total_ecopoints) || 0;
+      await supabaseAdmin
+        .from('organization_users')
+        .update({ total_ecopoints: current + points })
+        .eq('id', userId);
+      console.log(`[EcoPoints] Awarded ${points} pts to org user ${userId} (new total: ${current + points})`);
     }
   } catch (err) {
     console.error('[EcoPoints Award Error]:', err.message);
@@ -589,11 +605,85 @@ export async function reviewPost(req, res) {
 export async function getLeaderboard(req, res) {
   try {
     if (!requireSupabaseAdmin(res)) return;
+
+    // Check if requesting user belongs to an organization
+    let userOrgId = null;
+    let userOrgName = null;
+    if (req.user?.id) {
+      const { data: member } = await supabaseAdmin
+        .from('organization_users')
+        .select('organization_id, organizations(id, name)')
+        .eq('id', req.user.id)
+        .maybeSingle();
+      if (member?.organization_id) {
+        userOrgId = member.organization_id;
+        userOrgName = member.organizations?.name;
+      }
+    }
+
+    // Default scope based on user identity if not specified in query
+    const defaultScope = userOrgId ? 'organization' : 'individual';
+    const scope = (req.query.scope || req.query.type || defaultScope).toLowerCase();
+    const requestedOrgId = req.query.organization_id || req.query.org_id;
+
+    // Fetch list of active approved organizations for dropdown/filter
+    const { data: orgsList } = await supabaseAdmin
+      .from('organizations')
+      .select('id, name, organization_type')
+      .eq('approval_status', 'APPROVED')
+      .order('name', { ascending: true });
+
+    if (scope === 'organization' || scope === 'org') {
+      let targetOrgId = requestedOrgId || userOrgId;
+      if (!targetOrgId && orgsList && orgsList.length > 0) {
+        targetOrgId = orgsList[0].id;
+      }
+
+      let q = supabaseAdmin
+        .from('organization_users')
+        .select('id, full_name, email, role, total_ecopoints, avatar_url, organization_id, organizations(id, name)')
+        .order('total_ecopoints', { ascending: false })
+        .limit(50);
+
+      if (targetOrgId) {
+        q = q.eq('organization_id', targetOrgId);
+      }
+
+      const { data: orgUsers, error } = await q;
+      if (error) throw new Error(error.message);
+
+      const targetOrg = orgsList?.find((o) => o.id === targetOrgId) ||
+        orgUsers?.[0]?.organizations ||
+        (targetOrgId ? { id: targetOrgId, name: userOrgName || 'Organization' } : null);
+
+      const leaderboard = (orgUsers || []).map((u, idx) => ({
+        rank: idx + 1,
+        user_id: u.id,
+        full_name: u.full_name || 'Member',
+        email: u.email,
+        role: u.role,
+        avatar_url: u.avatar_url,
+        organization_id: u.organization_id,
+        organization_name: u.organizations?.name || targetOrg?.name || 'Organization',
+        total_ecopoints: Number(u.total_ecopoints) || 0,
+      }));
+
+      return res.json({
+        leaderboard,
+        scope: 'organization',
+        activeOrganization: targetOrg,
+        organizations: orgsList || [],
+        userRole: userOrgId ? 'ORG_MEMBER' : 'INDIVIDUAL',
+        userOrgId,
+      });
+    }
+
+    // Individual citizens leaderboard
     const { data: indUsers, error } = await supabaseAdmin
       .from('individual_users')
-      .select('id, total_ecopoints')
+      .select('id, full_name, total_ecopoints, avatar_url, location')
       .order('total_ecopoints', { ascending: false })
-      .limit(20);
+      .limit(50);
 
     if (error) throw new Error(error.message);
 
@@ -603,11 +693,19 @@ export async function getLeaderboard(req, res) {
     const leaderboard = (indUsers || []).map((u, idx) => ({
       rank: idx + 1,
       user_id: u.id,
-      full_name: names.get(u.id) || 'Terra Member',
+      full_name: u.full_name || names.get(u.id) || 'Terra Member',
+      avatar_url: u.avatar_url,
+      location: u.location,
       total_ecopoints: Number(u.total_ecopoints) || 0,
     }));
 
-    return res.json({ leaderboard });
+    return res.json({
+      leaderboard,
+      scope: 'individual',
+      organizations: orgsList || [],
+      userRole: userOrgId ? 'ORG_MEMBER' : 'INDIVIDUAL',
+      userOrgId,
+    });
   } catch (error) {
     console.error('[getLeaderboard Error]:', error);
     return res.status(500).json({ error: 'Failed to load leaderboard.' });

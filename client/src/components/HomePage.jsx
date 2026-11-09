@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Leaf,
   ArrowRight,
@@ -24,8 +24,62 @@ import {
   Check,
   RotateCcw,
   Plus,
-  Award
+  Award,
+  Send,
+  Loader2
 } from 'lucide-react';
+
+
+// ─── Scroll-triggered reveal hook ───────────────────────────────
+function useScrollReveal() {
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.08, rootMargin: '0px 0px -40px 0px' }
+    );
+    const elements = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .');
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  });
+}
+
+// ─── Animated counter component ─────────────────────────────────
+function CountUpStat({ value, suffix = '' }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated.current) {
+          hasAnimated.current = true;
+          const start = performance.now();
+          const duration = 1200;
+          const step = (now) => {
+            const progress = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setCount(Math.floor(eased * value));
+            if (progress < 1) requestAnimationFrame(step);
+          };
+          requestAnimationFrame(step);
+        }
+      },
+      { threshold: 0.3 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [value]);
+
+  return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
+}
 
 // Social Brand SVG Icons for Contact & Footer
 function TwitterIcon({ className = "w-5 h-5" }) {
@@ -71,6 +125,33 @@ export default function HomePage({ onExplore, onNavigate }) {
   const [donationAmount, setDonationAmount] = useState(25);
   const [donationInitiative, setDonationInitiative] = useState('trees');
   const [donationSuccess, setDonationSuccess] = useState(false);
+
+  // Contact form state
+  const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
+  const [contactSubmitting, setContactSubmitting] = useState(false);
+  const [contactResult, setContactResult] = useState(null);
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    setContactSubmitting(true);
+    setContactResult(null);
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(contactForm),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send message');
+      setContactResult({ type: 'success', message: data.message || 'Message sent successfully!' });
+      setContactForm({ name: '', email: '', message: '' });
+    } catch (err) {
+      setContactResult({ type: 'error', message: err.message });
+    } finally {
+      setContactSubmitting(false);
+    }
+  };
+
   const [impactStats, setImpactStats] = useState({
     co2_saved_kg: 245,
     trees_planted: 12,
@@ -286,7 +367,7 @@ export default function HomePage({ onExplore, onNavigate }) {
   return (
     <div className="min-h-screen bg-white text-slate-800 font-sans selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden">
       {/* -------------------- TOP NAVBAR (Matches User Reference) -------------------- */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100/80 transition-all">
+      <header className="sticky top-0 z-40 glass border-b border-slate-100/80 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             {/* Logo: Official TERRA AI Logo */}
@@ -349,7 +430,7 @@ export default function HomePage({ onExplore, onNavigate }) {
               {/* Explore Button (Takes you directly to the current main page) */}
               <button
                 onClick={onExplore}
-                className="flex items-center gap-2 px-5 py-2 rounded-full text-sm font-extrabold bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-700/20 hover:shadow-lg hover:shadow-emerald-700/30 hover:scale-105 active:scale-98 transition-all cursor-pointer group"
+                className="flex items-center gap-2 px-5 py-2 rounded-full text-sm font-extrabold bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-700/20 hover:shadow-lg hover:shadow-emerald-700/30 btn-smooth cursor-pointer group"
                 title="Enter the Terra AI Main Platform"
               >
                 <span>Explore Now</span>
@@ -463,14 +544,14 @@ export default function HomePage({ onExplore, onNavigate }) {
               </div>
 
               {/* Main Headline (Exact words and deep green hue from image) */}
-              <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-black text-[#133e24] tracking-tight leading-[1.04]">
+              <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-black text-[#133e24] tracking-tight leading-[1.04] animate-fadeInUp anim-delay-100">
                 Small Actions,
                 <br />
                 Big Impact
               </h1>
 
               {/* Subheading (Exact words from image) */}
-              <p className="text-base sm:text-lg md:text-xl text-slate-600 font-normal leading-relaxed max-w-xl">
+              <p className="text-base sm:text-lg md:text-xl text-slate-600 font-normal leading-relaxed max-w-xl animate-fadeInUp anim-delay-200">
                 Every small step you take today creates a ripple of positive change for our planet's future
               </p>
 
@@ -479,7 +560,7 @@ export default function HomePage({ onExplore, onNavigate }) {
                 {/* Explore Button: Prominent Pill Taking to Current Main Page */}
                 <button
                   onClick={onExplore}
-                  className="px-8 py-4 rounded-full text-base font-extrabold bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-700 text-white shadow-lg shadow-emerald-800/25 hover:shadow-xl hover:shadow-emerald-800/35 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-3 cursor-pointer group"
+                  className="px-8 py-4 rounded-full text-base font-extrabold bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-700 text-white shadow-lg shadow-emerald-800/25 hover:shadow-xl hover:shadow-emerald-800/35 btn-smooth flex items-center gap-3 cursor-pointer group"
                 >
                   <Compass className="w-5 h-5 text-emerald-200 group-hover:rotate-45 transition-transform duration-300" />
                   <span>Explore Now</span>
@@ -502,7 +583,7 @@ export default function HomePage({ onExplore, onNavigate }) {
                   <img className="inline-block h-7 w-7 rounded-full ring-2 ring-white" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80" alt="Member" />
                   <img className="inline-block h-7 w-7 rounded-full ring-2 ring-white" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80" alt="Member" />
                 </div>
-                <span>Joined by <strong className="text-emerald-800 font-bold">{impactStats.active_members}+</strong> eco-warriors in our community</span>
+                <span>Joined by <strong className="text-emerald-800 font-bold"><CountUpStat value={impactStats.active_members} suffix="+" /></strong> eco-warriors in our community</span>
               </div>
             </div>
 
@@ -713,7 +794,8 @@ export default function HomePage({ onExplore, onNavigate }) {
               return (
                 <div
                   key={feat.id}
-                  className="p-7 rounded-3xl bg-slate-50 border border-slate-200/70 hover:border-emerald-300 hover:bg-emerald-50/30 hover:shadow-xl transition-all duration-300 group flex flex-col justify-between"
+                  onClick={() => onNavigate && onNavigate(feat.id)}
+                  className="p-7 rounded-3xl bg-slate-50 border border-slate-200/70 hover:border-emerald-400 hover:bg-emerald-50/40 hover:shadow-xl transition-all duration-300 group flex flex-col justify-between smooth-card cursor-pointer"
                 >
                   <div>
                     <div className="flex items-center justify-between mb-5">
@@ -766,31 +848,31 @@ export default function HomePage({ onExplore, onNavigate }) {
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
-            <div className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xs hover:border-emerald-500/40 transition">
+            <div className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xs hover:border-emerald-500/40 transition-all duration-300 hover:bg-white/10 hover:scale-[1.02]">
               <div className="text-4xl sm:text-5xl font-black text-emerald-300 mb-2">
-                {impactStats.co2_saved_kg.toLocaleString()}
+                <CountUpStat value={impactStats.co2_saved_kg} />
               </div>
               <div className="text-sm font-bold text-white mb-1">Kilograms CO₂ Tracked & Offset</div>
               <div className="text-xs text-emerald-300/70">Verified through calculator & green actions</div>
             </div>
 
-            <div className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xs hover:border-emerald-500/40 transition">
+            <div className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xs hover:border-emerald-500/40 transition-all duration-300 hover:bg-white/10 hover:scale-[1.02]">
               <div className="text-4xl sm:text-5xl font-black text-emerald-300 mb-2">
-                {impactStats.trees_planted.toLocaleString()}
+                <CountUpStat value={impactStats.trees_planted} />
               </div>
               <div className="text-sm font-bold text-white mb-1">Trees & Green Actions</div>
               <div className="text-xs text-emerald-300/70">Audited by Gemini AI on GreenFeed</div>
             </div>
 
-            <div className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xs hover:border-emerald-500/40 transition">
+            <div className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xs hover:border-emerald-500/40 transition-all duration-300 hover:bg-white/10 hover:scale-[1.02]">
               <div className="text-4xl sm:text-5xl font-black text-emerald-300 mb-2">
-                {impactStats.total_ecopoints.toLocaleString()}
+                <CountUpStat value={impactStats.total_ecopoints} />
               </div>
               <div className="text-sm font-bold text-white mb-1">EcoPoints Earned</div>
               <div className="text-xs text-emerald-300/70">Rewarded for verified sustainability</div>
             </div>
 
-            <div className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xs hover:border-emerald-500/40 transition">
+            <div className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xs hover:border-emerald-500/40 transition-all duration-300 hover:bg-white/10 hover:scale-[1.02]">
               <div className="text-4xl sm:text-5xl font-black text-emerald-300 mb-2">
                 {impactStats.active_members}+
               </div>
@@ -817,15 +899,27 @@ export default function HomePage({ onExplore, onNavigate }) {
               </p>
             </div>
 
-            <form onSubmit={(e) => { e.preventDefault(); alert('Thank you for reaching out! Our eco team will respond within 24 hours.'); }} className="space-y-4">
+            <form onSubmit={handleContactSubmit} className="space-y-4">
+              {contactResult && (
+                <div className={`p-4 rounded-2xl text-sm font-semibold flex items-center gap-2.5 transition-all ${
+                  contactResult.type === 'success'
+                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
+                    : 'bg-rose-50 text-rose-700 border border-rose-300'
+                }`}>
+                  <span>{contactResult.type === 'success' ? '✅' : '⚠️'}</span>
+                  <span>{contactResult.message}</span>
+                </div>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Your Name</label>
                   <input
                     type="text"
                     required
+                    value={contactForm.name}
+                    onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
                     placeholder="Jane Doe"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-emerald-600 text-sm"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-emerald-600 focus:border-emerald-500 text-sm transition-all"
                   />
                 </div>
                 <div>
@@ -833,8 +927,10 @@ export default function HomePage({ onExplore, onNavigate }) {
                   <input
                     type="email"
                     required
+                    value={contactForm.email}
+                    onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
                     placeholder="jane@example.com"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-emerald-600 text-sm"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-emerald-600 focus:border-emerald-500 text-sm transition-all"
                   />
                 </div>
               </div>
@@ -844,17 +940,30 @@ export default function HomePage({ onExplore, onNavigate }) {
                 <textarea
                   rows="4"
                   required
+                  value={contactForm.message}
+                  onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
                   placeholder="Tell us about your organization or project..."
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-emerald-600 text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-emerald-600 focus:border-emerald-500 text-sm transition-all resize-none"
                 />
               </div>
 
               <div className="text-center pt-2">
                 <button
                   type="submit"
-                  className="px-8 py-3.5 rounded-full text-sm font-bold bg-[#133e24] text-white hover:bg-emerald-800 transition-colors cursor-pointer shadow-md"
+                  disabled={contactSubmitting}
+                  className="px-8 py-3.5 rounded-full text-sm font-bold bg-[#133e24] text-white hover:bg-emerald-800 transition-all cursor-pointer shadow-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mx-auto"
                 >
-                  Send Message
+                  {contactSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Sending Message...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      <span>Send Message</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
@@ -990,7 +1099,7 @@ export default function HomePage({ onExplore, onNavigate }) {
 
       {/* -------------------- MODAL: DONATE -------------------- */}
       {activeModal === 'donate' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fadeIn">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
             <button
               onClick={() => setActiveModal(null)}
@@ -1084,7 +1193,7 @@ export default function HomePage({ onExplore, onNavigate }) {
 
       {/* -------------------- MODAL: JOIN US -------------------- */}
       {activeModal === 'join' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fadeIn">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
             <button
               onClick={() => setActiveModal(null)}
@@ -1167,7 +1276,7 @@ export default function HomePage({ onExplore, onNavigate }) {
 
       {/* -------------------- MODAL: OUR APPROACH -------------------- */}
       {activeModal === 'approach' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fadeIn">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl relative max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
             <button
               onClick={() => setActiveModal(null)}
@@ -1247,7 +1356,7 @@ export default function HomePage({ onExplore, onNavigate }) {
 
       {/* -------------------- MODAL: CARD DETAIL -------------------- */}
       {activeModal === 'card-detail' && selectedCard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fadeIn">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
             <button
               onClick={() => setActiveModal(null)}

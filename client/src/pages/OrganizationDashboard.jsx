@@ -33,7 +33,7 @@ import PostRequestsPanel from '../components/PostRequestsPanel';
 import { getLeaderboard } from '../services/profileService';
 
 export default function OrganizationDashboard() {
-  const { user, organization, membership } = useAuth();
+  const { user, organization, membership, role } = useAuth();
   const [showPostRequests, setShowPostRequests] = useState(false);
 
   const [members, setMembers] = useState([]);
@@ -95,8 +95,10 @@ export default function OrganizationDashboard() {
 
   useEffect(() => {
     fetchMembers();
-    getLeaderboard().then(data => setOrgLeaderboard((data || []).slice(0, 5))).catch(() => {});
-  }, []);
+    getLeaderboard({ scope: 'organization', organization_id: organization?.id })
+      .then(data => setOrgLeaderboard((data || []).slice(0, 10)))
+      .catch(() => {});
+  }, [organization?.id]);
 
   // Filtered members based on live search
   const filteredMembers = useMemo(() => {
@@ -401,7 +403,7 @@ export default function OrganizationDashboard() {
                 )}
               </div>
 
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-emerald-400 tracking-tight">
                 {organization?.name || 'SJCET'}
               </h1>
 
@@ -441,7 +443,7 @@ export default function OrganizationDashboard() {
 
           {/* Quick Admin Actions: Add Members Button */}
           <div className="shrink-0 flex items-center gap-3">
-            {membership?.role === 'ORG_ADMIN' && (
+            {(membership?.role === 'ORG_ADMIN' || user?.account_type === 'ORG_ADMIN' || role === 'ORG_ADMIN') && (
               <button
                 onClick={() => setShowPostRequests(true)}
                 className="px-4 py-2.5 rounded-xl border border-teal-200 bg-white hover:bg-teal-50 text-teal-800 font-bold text-xs sm:text-sm shadow-sm flex items-center gap-2 transition"
@@ -480,7 +482,7 @@ export default function OrganizationDashboard() {
       </div>
 
       
-      {/* Community Eco-Leaderboard Widget */}
+      {/* Organization Team Eco-Leaderboard Widget */}
       <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -488,18 +490,20 @@ export default function OrganizationDashboard() {
               <Trophy className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-800">Community Eco-Leaderboard</h3>
-              <p className="text-xs text-slate-400">Campus & neighborhood sustainability rankings</p>
+              <h3 className="text-base font-bold text-slate-800">
+                {organization?.name ? `${organization.name} Team Leaderboard` : 'Organization Team Leaderboard'}
+              </h3>
+              <p className="text-xs text-slate-400">Top sustainability contributors under this organization</p>
             </div>
           </div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
             <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Live Standings</span>
+            <span>Organization Standings</span>
           </div>
         </div>
 
         {orgLeaderboard.length === 0 ? (
-          <p className="text-xs text-slate-400 text-center py-4">No leaderboard data yet.</p>
+          <p className="text-xs text-slate-400 text-center py-4">No team member leaderboard data yet.</p>
         ) : (
           <div className="divide-y divide-slate-100">
             {orgLeaderboard.map((u, idx) => {
@@ -514,7 +518,14 @@ export default function OrganizationDashboard() {
                       {u.full_name?.[0]?.toUpperCase() || 'T'}
                     </div>
                     <div>
-                      <span className="text-sm font-semibold text-slate-800">{u.full_name}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-semibold text-slate-800">{u.full_name}</span>
+                        {u.role && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+                            {u.role === 'ORG_ADMIN' ? 'Admin' : 'Member'}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-[11px] text-slate-400">Rank #{u.rank || idx + 1}</p>
                     </div>
                   </div>

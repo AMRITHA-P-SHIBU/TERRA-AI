@@ -17,6 +17,9 @@ import {
   X,
   Loader2,
   ExternalLink,
+  Mail,
+  Trash2,
+  MessageSquare,
 } from 'lucide-react';
 import PostRequestsPanel from '../components/PostRequestsPanel';
 
@@ -31,6 +34,9 @@ export default function AdminDashboard() {
   const [usersList, setUsersList] = useState([]);
   const [selectedOrgLogs, setSelectedOrgLogs] = useState([]);
   const [activeOrgForLogs, setActiveOrgForLogs] = useState(null);
+  const [contactMessages, setContactMessages] = useState([]);
+  const [contactUnreadCount, setContactUnreadCount] = useState(0);
+  const [contactSearch, setContactSearch] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
@@ -121,10 +127,72 @@ export default function AdminDashboard() {
     }
   };
 
+
+  // Load Contact Messages
+  const fetchContactMessages = async () => {
+    try {
+      const res = await fetch('/api/admin/contact-messages', {
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setContactMessages(data.messages || []);
+        setContactUnreadCount(data.unreadCount || 0);
+      }
+    } catch (err) {
+      console.error('Failed to load contact messages:', err);
+    }
+  };
+
+  const handleToggleMessageRead = async (msg) => {
+    try {
+      setActionLoading(msg.id);
+      const res = await fetch(`/api/admin/contact-messages/${msg.id}/read`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ is_read: !msg.is_read }),
+      });
+      if (res.ok) {
+        await fetchContactMessages();
+      }
+    } catch (err) {
+      console.error('Failed to update message read status:', err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDeleteMessage = async (msgId) => {
+    if (!window.confirm('Delete this contact inquiry?')) return;
+    try {
+      setActionLoading(msgId);
+      const res = await fetch(`/api/admin/contact-messages/${msgId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (res.ok) {
+        setFeedback({ type: 'success', message: 'Inquiry deleted successfully.' });
+        await fetchContactMessages();
+      }
+    } catch (err) {
+      console.error('Failed to delete message:', err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Pre-fetch count on mount
+  useEffect(() => {
+    fetchContactMessages();
+  }, []);
   useEffect(() => {
     if (activeTab === 'pending') fetchPendingOrgs();
     if (activeTab === 'organizations') fetchAllOrgs();
     if (activeTab === 'users') fetchUsers();
+    if (activeTab === 'contact-messages') fetchContactMessages();
   }, [activeTab]);
 
   // Action: Approve Organization
@@ -339,6 +407,18 @@ export default function AdminDashboard() {
           </button>
 
           <button
+            onClick={() => setActiveTab('contact-messages')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'contact-messages'
+                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Mail className="w-3.5 h-3.5" />
+            <span>Contact Inquiries {contactUnreadCount > 0 ? `(${contactUnreadCount})` : ''}</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('users')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'users'
@@ -405,10 +485,10 @@ export default function AdminDashboard() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-white tracking-tight">
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">
                 Organization Verification Queue
               </h2>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-600 mt-1 font-medium">
                 Carefully review official entity credentials and verification documents before activation.
               </p>
             </div>
@@ -558,10 +638,10 @@ export default function AdminDashboard() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-white tracking-tight">
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">
                 All Registered Organizations ({allOrgs.length})
               </h2>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-600 mt-1 font-medium">
                 Manage organization lifecycles, apply temporary suspensions, or reactivate compliant entities.
               </p>
             </div>
@@ -687,10 +767,10 @@ export default function AdminDashboard() {
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-xl font-bold text-white tracking-tight">
+              <h2 className="text-xl font-bold text-cyan-400 tracking-tight">
                 Platform Users ({filteredUsers.length} of {usersList.length})
               </h2>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-600 mt-1 font-medium">
                 Oversee citizen accounts, organization representatives, and platform access.
               </p>
             </div>
@@ -738,7 +818,6 @@ export default function AdminDashboard() {
                     <th className="py-3.5 px-4 font-semibold">Email</th>
                     <th className="py-3.5 px-4 font-semibold">Account Type</th>
                     <th className="py-3.5 px-4 font-semibold">Status</th>
-                    <th className="py-3.5 px-4 font-semibold">Email Verified</th>
                     <th className="py-3.5 px-4 font-semibold">Created Date</th>
                     <th className="py-3.5 px-4 font-semibold text-right">Action</th>
                   </tr>
@@ -787,15 +866,6 @@ export default function AdminDashboard() {
                           {u.status}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-xs">
-                        {u.email_verified ? (
-                          <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                            <Check className="w-3.5 h-3.5" /> Verified
-                          </span>
-                        ) : (
-                          <span className="text-slate-400">Unverified</span>
-                        )}
-                      </td>
                       <td className="py-3.5 px-4 text-slate-400 text-xs">
                         {new Date(u.created_at).toLocaleDateString()}
                       </td>
@@ -830,7 +900,7 @@ export default function AdminDashboard() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-white tracking-tight">
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">
                 Organization Approval Audit Logs
               </h2>
               {activeOrgForLogs && (
@@ -891,6 +961,146 @@ export default function AdminDashboard() {
       )}
 
       {/* ============================================================ */}
+      
+      {/* ============================================================ */}
+      {/* TAB: CONTACT INQUIRIES FROM HOMEPAGE */}
+      {/* ============================================================ */}
+      {activeTab === 'contact-messages' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                <Mail className="w-5 h-5 text-emerald-700" />
+                <span>Contact Inquiries & Partner Leads</span>
+                {contactUnreadCount > 0 && (
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                    {contactUnreadCount} New Unread
+                  </span>
+                )}
+              </h2>
+              <p className="text-xs text-slate-600 mt-1 font-medium">
+                Direct messages submitted via the public Contact section on the Home Page.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="relative flex-1 sm:w-64">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={contactSearch}
+                  onChange={(e) => setContactSearch(e.target.value)}
+                  placeholder="Search sender, email, query..."
+                  className="w-full pl-9 pr-4 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50"
+                />
+              </div>
+
+              <button
+                onClick={fetchContactMessages}
+                className="p-2 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl text-slate-400 hover:text-white transition cursor-pointer"
+                title="Refresh inquiries"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {contactMessages.filter(m => 
+              m.sender_name?.toLowerCase().includes(contactSearch.toLowerCase()) ||
+              m.sender_email?.toLowerCase().includes(contactSearch.toLowerCase()) ||
+              m.message?.toLowerCase().includes(contactSearch.toLowerCase())
+            ).length === 0 ? (
+              <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-12 text-center">
+                <MessageSquare className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+                <h3 className="text-base font-bold text-white mb-1">No Inquiries Recorded Yet</h3>
+                <p className="text-xs text-slate-400">
+                  When visitors submit inquiries through the contact form, they will appear here in real time.
+                </p>
+              </div>
+            ) : (
+              contactMessages
+                .filter(m => 
+                  m.sender_name?.toLowerCase().includes(contactSearch.toLowerCase()) ||
+                  m.sender_email?.toLowerCase().includes(contactSearch.toLowerCase()) ||
+                  m.message?.toLowerCase().includes(contactSearch.toLowerCase())
+                )
+                .map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`p-6 rounded-3xl border transition-all duration-300 ${
+                      msg.is_read
+                        ? 'bg-slate-900/60 border-slate-800 text-slate-300'
+                        : 'bg-slate-900/95 border-cyan-500/40 shadow-lg shadow-cyan-500/5 text-white ring-1 ring-cyan-500/20'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-sm shrink-0 ${
+                          msg.is_read
+                            ? 'bg-slate-800 text-slate-400'
+                            : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                        }`}>
+                          {msg.sender_name ? msg.sender_name.charAt(0).toUpperCase() : '?'}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-sm text-white">{msg.sender_name}</h4>
+                            {!msg.is_read && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                                NEW
+                              </span>
+                            )}
+                          </div>
+                          <a
+                            href={`mailto:${msg.sender_email}`}
+                            className="text-xs text-cyan-400 hover:underline"
+                          >
+                            {msg.sender_email}
+                          </a>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 self-end sm:self-auto">
+                        <span className="text-[11px] text-slate-400 mr-2">
+                          {new Date(msg.created_at).toLocaleString()}
+                        </span>
+
+                        <button
+                          onClick={() => handleToggleMessageRead(msg)}
+                          disabled={actionLoading === msg.id}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer border ${
+                            msg.is_read
+                              ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+                              : 'bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border-cyan-500/40'
+                          }`}
+                        >
+                          {msg.is_read ? 'Mark Unread' : 'Mark as Read'}
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteMessage(msg.id)}
+                          disabled={actionLoading === msg.id}
+                          className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl transition cursor-pointer"
+                          title="Delete message"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="pt-4">
+                      <p className="text-sm leading-relaxed text-slate-300 whitespace-pre-line bg-slate-950/50 p-4 rounded-2xl border border-slate-800/80">
+                        {msg.message}
+                      </p>
+                    </div>
+                  </div>
+                ))
+            )}
+          </div>
+        </div>
+      )}
+
       {/* REJECT WITH REASON MODAL */}
       {/* ============================================================ */}
       {rejectModalOpen && rejectOrg && (

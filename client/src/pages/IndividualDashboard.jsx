@@ -27,7 +27,7 @@ import {
 import { getProfile, getLeaderboard } from '../services/profileService';
 
 export default function IndividualDashboard({ onSelectTab }) {
-  const { user, changePassword } = useAuth();
+  const { user, role, organization, membership, changePassword } = useAuth();
   const navigate = useNavigate();
 
   // Password Change Modal State (auto-opens if must_change_password is true)
@@ -37,7 +37,11 @@ export default function IndividualDashboard({ onSelectTab }) {
 
   useEffect(() => {
     getProfile().then(p => setLivePoints(p?.total_ecopoints ?? 0)).catch(() => {});
-    getLeaderboard().then(data => setTopUsers((data || []).slice(0, 5))).catch(() => {});
+    const isOrg = role === 'ORG_MEMBER' || role === 'ORG_ADMIN' || Boolean(membership?.organization_id || organization?.id);
+    const orgTarget = organization?.id || membership?.organization_id;
+    getLeaderboard(isOrg ? { scope: 'organization', organization_id: orgTarget } : { scope: 'individual' })
+      .then(data => setTopUsers((data || []).slice(0, 5)))
+      .catch(() => {});
   }, []);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -277,8 +281,16 @@ export default function IndividualDashboard({ onSelectTab }) {
                 <Trophy className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-800">Community Eco-Leaderboard</h3>
-                <p className="text-xs text-slate-400">Top environmental champions ranked by verified EcoPoints</p>
+                <h3 className="text-base font-bold text-slate-800">
+                  {(role === 'ORG_MEMBER' || membership?.organization_id || organization?.id)
+                    ? (organization?.name ? `${organization.name} Member Standings` : 'Organization Member Leaderboard')
+                    : 'Individual Citizens Leaderboard'}
+                </h3>
+                <p className="text-xs text-slate-400">
+                  {(role === 'ORG_MEMBER' || membership?.organization_id || organization?.id)
+                    ? 'Top sustainability contributors within your organization'
+                    : 'Top individual environmental champions ranked by verified EcoPoints'}
+                </p>
               </div>
             </div>
             <button
