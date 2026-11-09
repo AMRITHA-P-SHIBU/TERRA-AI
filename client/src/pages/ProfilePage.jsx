@@ -276,6 +276,7 @@ function StatusBadge({ status }) {
 
 export default function ProfilePage() {
   const { user, role } = useAuth();
+  const isAdmin = role === 'SUPER_ADMIN' || role === 'ORG_ADMIN' || user?.account_type === 'SUPER_ADMIN' || user?.account_type === 'ORG_ADMIN';
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
@@ -359,7 +360,7 @@ export default function ProfilePage() {
   return (
     <main className="min-h-screen bg-slate-50/70">
       <Toast toast={toast} onClose={() => setToast(null)} />
-      {addPostOpen && <AddPostModal onClose={() => setAddPostOpen(false)} onCreated={onPostCreated} />}
+      {addPostOpen && !isAdmin && <AddPostModal onClose={() => setAddPostOpen(false)} onCreated={onPostCreated} />}
       {selectedPostId && <PostDetailModal postId={selectedPostId} currentUserId={user?.id} onClose={() => { setSelectedPostId(null); loadProfile(); }} onDeleted={onPostDeleted} notify={notify} />}
 
       <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10">
@@ -381,10 +382,11 @@ export default function ProfilePage() {
                     <h1 className="text-2xl font-black tracking-tight text-slate-900">{name}</h1>
                     <p className="text-sm text-slate-500">{profile?.email || user?.email}</p>
                   </div>
-                  <button onClick={() => setAddPostOpen(true)} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-700 to-teal-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-emerald-700/20 hover:brightness-110">
+                  {!isAdmin && (<button onClick={() => setAddPostOpen(true)} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-700 to-teal-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-emerald-700/20 hover:brightness-110">
                     <Plus className="h-5 w-5" /> Add post
-                  </button>
+                  </button>)}
                 </div>
+                {!isAdmin && (
                 <div className="mt-4 flex flex-wrap gap-x-7 gap-y-2 text-sm">
                   <span><strong className="text-slate-900">{profile?.post_count || 0}</strong> approved posts</span>
                   <span><strong className="text-slate-900">{profile?.total_likes || 0}</strong> likes received</span>
@@ -392,6 +394,7 @@ export default function ProfilePage() {
                     <span><strong className="text-emerald-700">{profile.total_ecopoints}</strong> EcoPoints</span>
                   )}
                 </div>
+                )}
                 <div className="mt-4">
                   {editingBio ? (
                     <div className="max-w-xl">
@@ -438,13 +441,14 @@ export default function ProfilePage() {
           )}
         </section>
 
+        {!isAdmin && (
         <section className="mt-7">
           <div className="mb-4 flex items-center justify-between border-b border-slate-200">
             <div className="flex gap-1">
               <button onClick={() => setTab('posts')} className={`border-b-2 px-4 py-3 text-sm font-bold ${tab === 'posts' ? 'border-emerald-600 text-emerald-800' : 'border-transparent text-slate-500'}`}>Posts <span className="ml-1 text-xs">({approvedPosts.length})</span></button>
               <button onClick={() => setTab('requests')} className={`border-b-2 px-4 py-3 text-sm font-bold ${tab === 'requests' ? 'border-emerald-600 text-emerald-800' : 'border-transparent text-slate-500'}`}>My Requests <span className="ml-1 text-xs">({requests.length})</span></button>
             </div>
-            <button onClick={() => setAddPostOpen(true)} aria-label="Add post" className="mb-2 rounded-full bg-emerald-700 p-2.5 text-white shadow-lg shadow-emerald-700/20 hover:scale-105"><Plus className="h-5 w-5" /></button>
+            {!isAdmin && (<button onClick={() => setAddPostOpen(true)} aria-label="Add post" className="mb-2 rounded-full bg-emerald-700 p-2.5 text-white shadow-lg shadow-emerald-700/20 hover:scale-105"><Plus className="h-5 w-5" /></button>)}
           </div>
 
           {loading ? (
@@ -453,7 +457,7 @@ export default function ProfilePage() {
             <div className="rounded-3xl border-2 border-dashed border-slate-200 px-5 py-14 text-center">
               <ImageIcon className="mx-auto mb-3 h-10 w-10 text-emerald-300" />
               <h3 className="font-bold text-slate-800">{tab === 'posts' ? 'No posts yet. Tap + to share your first post!' : 'No pending or rejected requests.'}</h3>
-              {tab === 'posts' && <button onClick={() => setAddPostOpen(true)} className="mt-4 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-bold text-white">Create post</button>}
+              {tab === 'posts' && !isAdmin && <button onClick={() => setAddPostOpen(true)} className="mt-4 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-bold text-white">Create post</button>}
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
@@ -472,6 +476,7 @@ export default function ProfilePage() {
             </div>
           )}
         </section>
+        )}
       </div>
     </main>
   );

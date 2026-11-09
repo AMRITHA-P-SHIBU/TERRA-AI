@@ -20,15 +20,32 @@ import {
   Mail,
   Trash2,
   MessageSquare,
+  TrendingUp,
+  Award,
+  Activity,
+  Layers,
+  ArrowUpRight,
+  Sparkles,
+  Megaphone,
+  PlusCircle,
 } from 'lucide-react';
 import PostRequestsPanel from '../components/PostRequestsPanel';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
 
-  const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'post-requests' | 'organizations' | 'users' | 'logs'
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'pending' | 'post-requests' | 'organizations' | 'users' | 'logs'
 
   // Data states
+  const [stats, setStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [announcements, setAnnouncements] = useState([]);
+  const [annTitle, setAnnTitle] = useState('');
+  const [annContent, setAnnContent] = useState('');
+  const [annCategory, setAnnCategory] = useState('ECO_CAMPAIGN');
+  const [annPriority, setAnnPriority] = useState('MEDIUM');
+  const [annLoading, setAnnLoading] = useState(false);
+  const [annPublishing, setAnnPublishing] = useState(false);
   const [pendingOrgs, setPendingOrgs] = useState([]);
   const [allOrgs, setAllOrgs] = useState([]);
   const [usersList, setUsersList] = useState([]);
@@ -51,6 +68,94 @@ export default function AdminDashboard() {
   // Search/Filter states
   const [userSearch, setUserSearch] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState('ALL');
+
+  // Load Dashboard Overview Stats
+  const fetchStats = async () => {
+    try {
+      setStatsLoading(true);
+      const res = await fetch('/api/admin/stats', {
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setStats(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch dashboard stats:', err);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  // Load Announcements for Super Admin
+  const fetchAnnouncements = async () => {
+    try {
+      setAnnLoading(true);
+      const res = await fetch('/api/announcements?manage=true', {
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAnnouncements(data.announcements || []);
+      }
+    } catch (err) {
+      console.error('Failed to load announcements:', err);
+    } finally {
+      setAnnLoading(false);
+    }
+  };
+
+  const handleCreateAnnouncement = async (e) => {
+    e.preventDefault();
+    if (!annTitle.trim() || !annContent.trim()) return;
+    try {
+      setAnnPublishing(true);
+      const res = await fetch('/api/announcements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          title: annTitle,
+          content: annContent,
+          category: annCategory,
+          priority: annPriority,
+        }),
+      });
+      if (res.ok) {
+        setAnnTitle('');
+        setAnnContent('');
+        setFeedback({ type: 'success', message: 'Platform announcement broadcast successfully!' });
+        await fetchAnnouncements();
+      } else {
+        const err = await res.json();
+        setFeedback({ type: 'error', message: err.error || 'Failed to publish announcement.' });
+      }
+    } catch (err) {
+      console.error('Failed to publish announcement:', err);
+      setFeedback({ type: 'error', message: 'Failed to publish announcement.' });
+    } finally {
+      setAnnPublishing(false);
+    }
+  };
+
+  const handleDeleteAnnouncement = async (id) => {
+    if (!window.confirm('Delete this announcement?')) return;
+    try {
+      const res = await fetch('/api/announcements/' + id, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (res.ok) {
+        setFeedback({ type: 'success', message: 'Announcement deleted.' });
+        await fetchAnnouncements();
+      }
+    } catch (err) {
+      console.error('Failed to delete announcement:', err);
+    }
+  };
 
   // Load Pending Organizations
   const fetchPendingOrgs = async () => {
@@ -187,8 +292,12 @@ export default function AdminDashboard() {
   // Pre-fetch count on mount
   useEffect(() => {
     fetchContactMessages();
+    fetchStats();
+    fetchPendingOrgs();
   }, []);
   useEffect(() => {
+    if (activeTab === 'overview') fetchStats();
+    if (activeTab === 'announcements') fetchAnnouncements();
     if (activeTab === 'pending') fetchPendingOrgs();
     if (activeTab === 'organizations') fetchAllOrgs();
     if (activeTab === 'users') fetchUsers();
@@ -369,7 +478,31 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800">
+        <div className="flex flex-wrap items-center gap-2 bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'overview'
+                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Activity className="w-3.5 h-3.5" />
+            <span>Overview</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('announcements')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'announcements'
+                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Megaphone className="w-3.5 h-3.5" />
+            <span>Announcements</span>
+          </button>
+
           <button
             onClick={() => setActiveTab('pending')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
@@ -469,6 +602,327 @@ export default function AdminDashboard() {
           >
             <X className="w-4 h-4" />
           </button>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* TAB 0: DASHBOARD OVERVIEW (STATS CARDS & METRICS) */}
+      {/* ============================================================ */}
+      {activeTab === 'overview' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-cyan-400 tracking-tight flex items-center gap-2">
+                <Activity className="w-5 h-5 text-cyan-400" />
+                <span>Platform Executive Overview</span>
+              </h2>
+              <p className="text-xs text-slate-400 mt-1">
+                Real-time governance telemetry, user adoption, verification pipelines, and EcoPoints circulation.
+              </p>
+            </div>
+            <button
+              onClick={fetchStats}
+              disabled={statsLoading}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-xs font-semibold text-slate-300 border border-slate-700 transition cursor-pointer"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${statsLoading ? 'animate-spin' : ''}`} />
+              <span>Refresh Stats</span>
+            </button>
+          </div>
+
+          {/* Primary Metric KPI Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Card 1: Total Users */}
+            <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-5 shadow-xl relative overflow-hidden group hover:border-cyan-500/40 transition">
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-cyan-500/5 rounded-full blur-xl group-hover:bg-cyan-500/10 transition" />
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Registered Users</span>
+                <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                  <Users className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className="text-3xl font-black text-white">{stats?.users?.total ?? '—'}</span>
+                <span className="text-xs font-semibold text-emerald-400 flex items-center">
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                  +{stats?.users?.newThisWeek || 0} this wk
+                </span>
+              </div>
+              <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                <span>{stats?.users?.individual || 0} Citizens</span>
+                <span>•</span>
+                <span>{stats?.users?.orgAdmin || 0} Org Admins</span>
+                <span>•</span>
+                <span className="text-emerald-400 font-semibold">{stats?.users?.active || 0} Active</span>
+              </div>
+            </div>
+
+            {/* Card 2: Organizations */}
+            <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-5 shadow-xl relative overflow-hidden group hover:border-teal-500/40 transition">
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-teal-500/5 rounded-full blur-xl group-hover:bg-teal-500/10 transition" />
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Organizations</span>
+                <div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400">
+                  <Building2 className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className="text-3xl font-black text-white">{stats?.organizations?.total ?? '—'}</span>
+                <span className="text-xs font-semibold text-teal-400">
+                  {stats?.organizations?.approved || 0} Approved
+                </span>
+              </div>
+              <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                <button
+                  onClick={() => setActiveTab('pending')}
+                  className="text-amber-400 hover:underline font-semibold cursor-pointer"
+                >
+                  {stats?.organizations?.pending || 0} Pending Review
+                </button>
+                <span>•</span>
+                <span>{stats?.organizations?.rejected || 0} Rejected</span>
+              </div>
+            </div>
+
+            {/* Card 3: GreenFeed Posts */}
+            <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-5 shadow-xl relative overflow-hidden group hover:border-emerald-500/40 transition">
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500/5 rounded-full blur-xl group-hover:bg-emerald-500/10 transition" />
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">GreenFeed Actions</span>
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <FileText className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className="text-3xl font-black text-white">{stats?.posts?.total ?? '—'}</span>
+                <span className="text-xs font-semibold text-emerald-400 flex items-center">
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                  +{stats?.posts?.newThisWeek || 0} this wk
+                </span>
+              </div>
+              <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                <span className="text-emerald-400 font-semibold">{stats?.posts?.approved || 0} Published</span>
+                <span>•</span>
+                <button
+                  onClick={() => setActiveTab('post-requests')}
+                  className="text-amber-400 hover:underline font-semibold cursor-pointer"
+                >
+                  {stats?.posts?.pending || 0} Pending
+                </button>
+              </div>
+            </div>
+
+            {/* Card 4: EcoPoints Awarded */}
+            <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-5 shadow-xl relative overflow-hidden group hover:border-amber-500/40 transition">
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-amber-500/5 rounded-full blur-xl group-hover:bg-amber-500/10 transition" />
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total EcoPoints</span>
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                  <Award className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className="text-3xl font-black text-amber-300">
+                  {stats?.ecopoints?.total ? Number(stats.ecopoints.total).toLocaleString() : '—'}
+                </span>
+                <span className="text-xs font-semibold text-amber-400/80">PTS</span>
+              </div>
+              <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                <span>{stats?.ecopoints?.individual || 0} Citizens</span>
+                <span>•</span>
+                <span>{stats?.ecopoints?.organization || 0} Org Teams</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* TAB: ANNOUNCEMENTS BROADCAST MANAGEMENT */}
+      {/* ============================================================ */}
+      {activeTab === 'announcements' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-cyan-400 tracking-tight flex items-center gap-2">
+                <Megaphone className="w-5 h-5 text-cyan-400" />
+                <span>Platform Public Announcements</span>
+              </h2>
+              <p className="text-xs text-slate-400 mt-1">
+                Broadcast public announcements, sustainability campaigns, and official system bulletins visible to all Individual Citizens.
+              </p>
+            </div>
+            <button
+              onClick={fetchAnnouncements}
+              disabled={annLoading}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-xs font-semibold text-slate-300 border border-slate-700 transition cursor-pointer"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${annLoading ? 'animate-spin' : ''}`} />
+              <span>Refresh Broadcasts</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Create Announcement Card */}
+            <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-6 shadow-xl space-y-4">
+              <div className="flex items-center gap-2">
+                <PlusCircle className="w-4 h-4 text-cyan-400" />
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider">New Platform Broadcast</h3>
+              </div>
+              <p className="text-xs text-slate-400">
+                This notice will appear in the dashboards and feeds of all individual citizens.
+              </p>
+
+              <form onSubmit={handleCreateAnnouncement} className="space-y-3.5 pt-1">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                    Announcement Title
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={annTitle}
+                    onChange={(e) => setAnnTitle(e.target.value)}
+                    placeholder="e.g. Earth Day 2026 Community Clean-Up Drive"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500/50"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                      Category
+                    </label>
+                    <select
+                      value={annCategory}
+                      onChange={(e) => setAnnCategory(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500/50"
+                    >
+                      <option value="ECO_CAMPAIGN">Eco Campaign</option>
+                      <option value="EVENT">Event</option>
+                      <option value="URGENT">Urgent Notice</option>
+                      <option value="GENERAL">General Bulletin</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                      Priority Level
+                    </label>
+                    <select
+                      value={annPriority}
+                      onChange={(e) => setAnnPriority(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500/50"
+                    >
+                      <option value="MEDIUM">Standard</option>
+                      <option value="HIGH">High</option>
+                      <option value="URGENT">Urgent Alert</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                    Announcement Body
+                  </label>
+                  <textarea
+                    rows={4}
+                    required
+                    value={annContent}
+                    onChange={(e) => setAnnContent(e.target.value)}
+                    placeholder="Provide details about the initiative, schedule, eligibility, or platform updates..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500/50"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={annPublishing || !annTitle.trim() || !annContent.trim()}
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
+                >
+                  {annPublishing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Broadcasting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Megaphone className="w-4 h-4" />
+                      <span>Broadcast to Individual Users</span>
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+
+            {/* List of Published Announcements */}
+            <div className="lg:col-span-2 space-y-3.5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Live Broadcasts ({announcements.length})
+                </h3>
+                <span className="text-[11px] text-cyan-400 font-medium">Audience: Individual Platform Citizens</span>
+              </div>
+
+              {announcements.length === 0 ? (
+                <div className="rounded-3xl bg-slate-900/60 border border-slate-800 p-8 text-center text-slate-500">
+                  <Megaphone className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+                  <p className="text-xs">No platform announcements published yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {announcements.map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-3xl bg-slate-900/90 border border-slate-800 p-5 shadow-xl space-y-3 relative group hover:border-cyan-500/30 transition"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase tracking-wider ${
+                            item.category === 'EVENT'
+                              ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                              : item.category === 'ECO_CAMPAIGN'
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              : item.category === 'URGENT'
+                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                              : 'bg-slate-800 text-slate-300'
+                          }`}>
+                            {item.category?.replace('_', ' ') || 'GENERAL'}
+                          </span>
+                          {item.priority === 'URGENT' && (
+                            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-md">
+                              Priority Notice
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <span className="text-[11px] text-slate-400">
+                            {new Date(item.created_at).toLocaleDateString()}
+                          </span>
+                          <button
+                            onClick={() => handleDeleteAnnouncement(item.id)}
+                            title="Delete announcement"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <h4 className="text-base font-bold text-white">{item.title}</h4>
+                      <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-line">{item.content}</p>
+
+                      <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
+                        <span>Target: All Individual Citizens</span>
+                        <span>Author: {item.author_name}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

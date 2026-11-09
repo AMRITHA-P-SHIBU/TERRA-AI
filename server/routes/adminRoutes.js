@@ -10,6 +10,7 @@ import {
   getOrganizationDocument,
   getAllUsers,
   updateUserStatus,
+  getDashboardStats,
 } from '../controllers/adminController.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { authorize } from '../middleware/authorize.js';
@@ -20,6 +21,9 @@ const router = Router();
 // Protect all admin endpoints: Must be authenticated AND have role SUPER_ADMIN
 router.use(authenticate);
 router.use(authorize('SUPER_ADMIN'));
+
+// Overview Stats
+router.get('/stats', getDashboardStats);
 
 // Organization Review & Approval Lifecycle
 router.get('/organizations/pending', getPendingOrganizations);

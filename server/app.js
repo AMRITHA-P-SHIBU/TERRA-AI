@@ -16,6 +16,7 @@ import adminRoutes from './routes/adminRoutes.js';
 import socialRoutes from './routes/socialRoutes.js';
 import carbonRoutes from './routes/carbonRoutes.js';
 import ecoExchangeRoutes from './routes/ecoExchangeRoutes.js';
+import announcementRoutes from './routes/announcementRoutes.js';
 import { seedSuperAdmin } from './scripts/seedSuperAdmin.js';
 
 export const app = express();
@@ -339,6 +340,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api', socialRoutes);
 app.use('/api/carbon', carbonRoutes);
 app.use('/api/eco-exchange', ecoExchangeRoutes);
+app.use('/api/announcements', announcementRoutes);
 
 // -------------------------------------------------------------
 // Existing Terra AI Services (AI Assistant, GreenFeed, Marketplace)

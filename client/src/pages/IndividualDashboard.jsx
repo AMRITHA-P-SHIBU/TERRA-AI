@@ -25,6 +25,7 @@ import {
   Trophy,
 } from 'lucide-react';
 import { getProfile, getLeaderboard } from '../services/profileService';
+import AnnouncementsFeed from '../components/AnnouncementsFeed';
 
 export default function IndividualDashboard({ onSelectTab }) {
   const { user, role, organization, membership, changePassword } = useAuth();
@@ -181,6 +182,9 @@ export default function IndividualDashboard({ onSelectTab }) {
             <p className="text-xs text-amber-400 mt-1 font-medium">Clean Champion Unlocked</p>
           </div>
         </div>
+
+        {/* Official Announcements */}
+        <AnnouncementsFeed className="mt-2" />
 
         {/* Main Platform Navigation Modules */}
         <div className="space-y-4">

@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { query } from '../config/database.js';
+import { query, supabase } from '../config/database.js';
 import { sendOrgDecisionEmail } from '../services/emailService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -357,6 +357,100 @@ export async function updateUserStatus(req, res) {
   }
 }
 
+/**
+ * 11. Get System & Platform Stats (Dashboard Overview)
+ */
+export async function getDashboardStats(_req, res) {
+  try {
+    // 1. Users
+    const { data: users, error: uErr } = await supabase
+      .from('users')
+      .select('id, account_type, status, created_at');
+    if (uErr) throw uErr;
+
+    const totalUsers = users?.length || 0;
+    const individualUsers = users?.filter(u => u.account_type === 'INDIVIDUAL').length || 0;
+    const orgAdminUsers = users?.filter(u => u.account_type === 'ORG_ADMIN').length || 0;
+    const superAdminUsers = users?.filter(u => u.account_type === 'SUPER_ADMIN').length || 0;
+    const activeUsers = users?.filter(u => u.status === 'ACTIVE').length || 0;
+    const suspendedUsers = users?.filter(u => u.status === 'SUSPENDED').length || 0;
+
+    // Users joined in last 7 days
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const newUsersThisWeek = users?.filter(u => new Date(u.created_at) >= weekAgo).length || 0;
+
+    // 2. Organizations
+    const { data: orgs, error: oErr } = await supabase
+      .from('organizations')
+      .select('id, name, organization_type, approval_status, created_at');
+    if (oErr) throw oErr;
+
+    const totalOrgs = orgs?.length || 0;
+    const approvedOrgs = orgs?.filter(o => o.approval_status === 'APPROVED').length || 0;
+    const pendingOrgs = orgs?.filter(o => o.approval_status === 'PENDING').length || 0;
+    const rejectedOrgs = orgs?.filter(o => o.approval_status === 'REJECTED').length || 0;
+
+    // 3. Posts
+    const { data: posts, error: pErr } = await supabase
+      .from('posts')
+      .select('id, status, created_at');
+    if (pErr) throw pErr;
+
+    const totalPosts = posts?.length || 0;
+    const approvedPosts = posts?.filter(p => p.status === 'APPROVED').length || 0;
+    const pendingPosts = posts?.filter(p => p.status === 'PENDING').length || 0;
+    const rejectedPosts = posts?.filter(p => p.status === 'REJECTED').length || 0;
+    const newPostsThisWeek = posts?.filter(p => new Date(p.created_at) >= weekAgo).length || 0;
+
+    // 4. EcoPoints
+    const { data: indUsers } = await supabase.from('individual_users').select('total_ecopoints');
+    const { data: orgMembers } = await supabase.from('organization_users').select('total_ecopoints');
+
+    const indEcoPoints = (indUsers || []).reduce((sum, u) => sum + (Number(u.total_ecopoints) || 0), 0);
+    const orgEcoPoints = (orgMembers || []).reduce((sum, u) => sum + (Number(u.total_ecopoints) || 0), 0);
+    const totalEcoPoints = indEcoPoints + orgEcoPoints;
+
+    return res.json({
+      users: {
+        total: totalUsers,
+        individual: individualUsers,
+        orgAdmin: orgAdminUsers,
+        superAdmin: superAdminUsers,
+        active: activeUsers,
+        suspended: suspendedUsers,
+        newThisWeek: newUsersThisWeek,
+      },
+      organizations: {
+        total: totalOrgs,
+        approved: approvedOrgs,
+        pending: pendingOrgs,
+        rejected: rejectedOrgs,
+      },
+      posts: {
+        total: totalPosts,
+        approved: approvedPosts,
+        pending: pendingPosts,
+        rejected: rejectedPosts,
+        newThisWeek: newPostsThisWeek,
+      },
+      ecopoints: {
+        total: totalEcoPoints,
+        individual: indEcoPoints,
+        organization: orgEcoPoints,
+      },
+      system: {
+        status: 'HEALTHY',
+        serverTime: new Date().toISOString(),
+        nodeVersion: process.version,
+      },
+    });
+  } catch (error) {
+    console.error('[getDashboardStats Error]:', error);
+    return res.status(500).json({ error: 'Failed to retrieve dashboard stats' });
+  }
+}
+
 export default {
   getPendingOrganizations,
   getAllOrganizations,
@@ -368,4 +462,5 @@ export default {
   getOrganizationDocument,
   getAllUsers,
   updateUserStatus,
+  getDashboardStats,
 };

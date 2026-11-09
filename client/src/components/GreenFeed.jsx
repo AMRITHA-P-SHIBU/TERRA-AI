@@ -7,7 +7,8 @@ import { PostDetailModal } from '../pages/ProfilePage';
 import { getFeed } from '../services/profileService';
 
 export default function GreenFeed() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const isAdmin = role === 'SUPER_ADMIN' || role === 'ORG_ADMIN' || user?.account_type === 'SUPER_ADMIN' || user?.account_type === 'ORG_ADMIN';
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -59,9 +60,11 @@ export default function GreenFeed() {
             <h1 className="text-2xl font-black tracking-tight sm:text-3xl">Inspire change. Share green milestones.</h1>
             <p className="mt-2 text-sm leading-relaxed text-emerald-100">Approved actions from your community. Individual accounts and organization communities stay separate.</p>
           </div>
+          {!isAdmin && (
           <button onClick={() => navigate('/profile')} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-emerald-900 shadow hover:bg-emerald-50">
             <Plus className="h-5 w-5" /> Create a post
           </button>
+          )}
         </div>
       </header>
 

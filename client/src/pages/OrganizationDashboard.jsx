@@ -28,13 +28,88 @@ import {
   User,
   Trophy,
   Sparkles,
+  Megaphone,
 } from 'lucide-react';
+import AnnouncementsFeed from '../components/AnnouncementsFeed';
 import PostRequestsPanel from '../components/PostRequestsPanel';
 import { getLeaderboard } from '../services/profileService';
 
 export default function OrganizationDashboard() {
   const { user, organization, membership, role } = useAuth();
   const [showPostRequests, setShowPostRequests] = useState(false);
+  const [showAnnouncements, setShowAnnouncements] = useState(false);
+  const [orgAnnouncements, setOrgAnnouncements] = useState([]);
+  const [orgAnnTitle, setOrgAnnTitle] = useState('');
+  const [orgAnnContent, setOrgAnnContent] = useState('');
+  const [orgAnnCategory, setOrgAnnCategory] = useState('EVENT');
+  const [orgAnnPriority, setOrgAnnPriority] = useState('MEDIUM');
+  const [orgAnnLoading, setOrgAnnLoading] = useState(false);
+  const [orgAnnPublishing, setOrgAnnPublishing] = useState(false);
+
+  const fetchOrgAnnouncements = async () => {
+    try {
+      setOrgAnnLoading(true);
+      const res = await fetch('/api/announcements?manage=true', {
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setOrgAnnouncements(data.announcements || []);
+      }
+    } catch (err) {
+      console.error('Failed to load org announcements:', err);
+    } finally {
+      setOrgAnnLoading(false);
+    }
+  };
+
+  const handleCreateOrgAnnouncement = async (e) => {
+    e.preventDefault();
+    if (!orgAnnTitle.trim() || !orgAnnContent.trim()) return;
+    try {
+      setOrgAnnPublishing(true);
+      const res = await fetch('/api/announcements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          title: orgAnnTitle,
+          content: orgAnnContent,
+          category: orgAnnCategory,
+          priority: orgAnnPriority,
+        }),
+      });
+      if (res.ok) {
+        setOrgAnnTitle('');
+        setOrgAnnContent('');
+        await fetchOrgAnnouncements();
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to publish announcement');
+      }
+    } catch (err) {
+      console.error('Failed to publish org announcement:', err);
+    } finally {
+      setOrgAnnPublishing(false);
+    }
+  };
+
+  const handleDeleteOrgAnnouncement = async (id) => {
+    if (!window.confirm('Delete this announcement?')) return;
+    try {
+      const res = await fetch('/api/announcements/' + id, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (res.ok) {
+        await fetchOrgAnnouncements();
+      }
+    } catch (err) {
+      console.error('Failed to delete org announcement:', err);
+    }
+  };
 
   const [members, setMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
@@ -353,6 +428,202 @@ export default function OrganizationDashboard() {
     return excelRows;
   }, [excelRows, excelFilter]);
 
+  if (showAnnouncements) {
+    return (
+      <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+        <BackButton onClick={() => setShowAnnouncements(false)} label="Back to Organization Dashboard" className="mb-2" />
+        
+        <div className="rounded-3xl border border-teal-200 bg-white p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-100 text-teal-800">
+                  {organization?.name || 'SJCET'} Broadcast Channel
+                </span>
+              </div>
+              <h1 className="text-2xl font-black text-slate-900 mt-1">
+                Organization Announcements
+              </h1>
+              <p className="text-xs text-slate-500 mt-1">
+                Post notices, green campus drives, and instructions that are broadcast strictly to members of {organization?.name || 'your organization'}.
+              </p>
+            </div>
+            <button
+              onClick={fetchOrgAnnouncements}
+              disabled={orgAnnLoading}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 transition cursor-pointer"
+            >
+              <Loader2 className={`w-3.5 h-3.5 ${orgAnnLoading ? 'animate-spin' : ''}`} />
+              <span>Refresh Notices</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Create Announcement Form */}
+            <div className="rounded-2xl border border-teal-100 bg-teal-50/40 p-5 space-y-4">
+              <div className="flex items-center gap-2 text-teal-900 font-bold text-sm">
+                <Megaphone className="w-4 h-4 text-teal-700" />
+                <span>New Org Announcement</span>
+              </div>
+              <p className="text-xs text-slate-600">
+                Visible only to verified members belonging to {organization?.name || 'SJCET'}.
+              </p>
+
+              <form onSubmit={handleCreateOrgAnnouncement} className="space-y-3 pt-1">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                    Notice Title
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={orgAnnTitle}
+                    onChange={(e) => setOrgAnnTitle(e.target.value)}
+                    placeholder="e.g. Campus Tree Plantation Drive this Friday"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                      Category
+                    </label>
+                    <select
+                      value={orgAnnCategory}
+                      onChange={(e) => setOrgAnnCategory(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 focus:outline-none focus:border-teal-500"
+                    >
+                      <option value="EVENT">Campus Event</option>
+                      <option value="ECO_CAMPAIGN">Green Drive</option>
+                      <option value="URGENT">Urgent Notice</option>
+                      <option value="GENERAL">General Bulletin</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                      Priority
+                    </label>
+                    <select
+                      value={orgAnnPriority}
+                      onChange={(e) => setOrgAnnPriority(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 focus:outline-none focus:border-teal-500"
+                    >
+                      <option value="MEDIUM">Standard</option>
+                      <option value="HIGH">High</option>
+                      <option value="URGENT">Urgent Alert</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                    Details / Instructions
+                  </label>
+                  <textarea
+                    rows={4}
+                    required
+                    value={orgAnnContent}
+                    onChange={(e) => setOrgAnnContent(e.target.value)}
+                    placeholder="Share event venue, schedule, points rewards, or instructions..."
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-500"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={orgAnnPublishing || !orgAnnTitle.trim() || !orgAnnContent.trim()}
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-teal-700 to-emerald-700 hover:from-teal-800 hover:to-emerald-800 text-white font-bold text-xs shadow-md shadow-teal-700/20 flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
+                >
+                  {orgAnnPublishing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Broadcasting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Megaphone className="w-4 h-4" />
+                      <span>Publish to {organization?.name || 'Members'}</span>
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+
+            {/* List of Org Announcements */}
+            <div className="lg:col-span-2 space-y-3.5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Active Member Bulletins ({orgAnnouncements.length})
+                </h3>
+                <span className="text-[11px] text-teal-700 font-semibold">Audience: {organization?.name || 'SJCET'} Members Only</span>
+              </div>
+
+              {orgAnnouncements.length === 0 ? (
+                <div className="rounded-2xl border-2 border-dashed border-slate-200 p-8 text-center text-slate-400">
+                  <Megaphone className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                  <p className="text-xs">No active announcements for {organization?.name || 'your organization'}.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {orgAnnouncements.map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-2.5 hover:border-teal-300 transition"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase tracking-wider ${
+                            item.category === 'EVENT'
+                              ? 'bg-blue-100 text-blue-800'
+                              : item.category === 'ECO_CAMPAIGN'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : item.category === 'URGENT'
+                              ? 'bg-rose-100 text-rose-800'
+                              : 'bg-slate-100 text-slate-700'
+                          }`}>
+                            {item.category?.replace('_', ' ') || 'GENERAL'}
+                          </span>
+                          {item.priority === 'URGENT' && (
+                            <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md">
+                              Priority Notice
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <span className="text-[11px] text-slate-400">
+                            {new Date(item.created_at).toLocaleDateString()}
+                          </span>
+                          <button
+                            onClick={() => handleDeleteOrgAnnouncement(item.id)}
+                            title="Delete announcement"
+                            className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <h4 className="text-sm sm:text-base font-bold text-slate-900">{item.title}</h4>
+                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line">{item.content}</p>
+
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                        <span>Target: {item.organization_name || 'Organization'} Members</span>
+                        <span>Posted by {item.author_name}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (showPostRequests) {
     return (
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
@@ -444,13 +715,29 @@ export default function OrganizationDashboard() {
           {/* Quick Admin Actions: Add Members Button */}
           <div className="shrink-0 flex items-center gap-3">
             {(membership?.role === 'ORG_ADMIN' || user?.account_type === 'ORG_ADMIN' || role === 'ORG_ADMIN') && (
-              <button
-                onClick={() => setShowPostRequests(true)}
-                className="px-4 py-2.5 rounded-xl border border-teal-200 bg-white hover:bg-teal-50 text-teal-800 font-bold text-xs sm:text-sm shadow-sm flex items-center gap-2 transition"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Post Requests</span>
-              </button>
+              <>
+                <button
+                  onClick={() => {
+                    setShowPostRequests(false);
+                    setShowAnnouncements(true);
+                    fetchOrgAnnouncements();
+                  }}
+                  className="px-4 py-2.5 rounded-xl border border-teal-200 bg-white hover:bg-teal-50 text-teal-800 font-bold text-xs sm:text-sm shadow-sm flex items-center gap-2 transition cursor-pointer"
+                >
+                  <Megaphone className="w-4 h-4 text-teal-700" />
+                  <span>Announcements</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAnnouncements(false);
+                    setShowPostRequests(true);
+                  }}
+                  className="px-4 py-2.5 rounded-xl border border-teal-200 bg-white hover:bg-teal-50 text-teal-800 font-bold text-xs sm:text-sm shadow-sm flex items-center gap-2 transition cursor-pointer"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Post Requests</span>
+                </button>
+              </>
             )}
             <button
               onClick={() => {
@@ -482,6 +769,8 @@ export default function OrganizationDashboard() {
       </div>
 
       
+      <AnnouncementsFeed className="mt-2" />
+
       {/* Organization Team Eco-Leaderboard Widget */}
       <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
